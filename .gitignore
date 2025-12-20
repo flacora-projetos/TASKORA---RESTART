@@ -28,3 +28,11 @@ service-account.json
 apps/web/.next
 apps/api/dist
 tmp
+
+# Sensitive docs (public repo - ignore)
+Documentacao/apis_e_mcp.md
+Documentacao/taskora_google_meta.md
+Documentacao/GA4_taskora.md
+Documentacao/pinterest_mcp_plan.md
+Documentacao/tutorial_acesso_apis_mcp.md
+Documentacao/seed_scheduler.md
