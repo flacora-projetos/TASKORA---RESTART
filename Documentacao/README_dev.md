@@ -13,7 +13,7 @@ pnpm install
 - `apps/web/.env.development.local`:  
   ```env
   NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-  NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD8Qv-wQBJsGrYAhY_6T1iHdWCjtjmxtEQ
+    NEXT_PUBLIC_FIREBASE_API_KEY=<firebase-api-key>
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=dacora---tarefas.firebaseapp.com
   NEXT_PUBLIC_FIREBASE_PROJECT_ID=dacora---tarefas
   NEXT_PUBLIC_FIREBASE_APP_ID=1:406318974539:web:d842997c1b064c0ba56fce
@@ -253,3 +253,10 @@ pnpm install
 ### ValidaÃ§Ã£o via prÃ©via (sem impactar produÃ§Ã£o)
 - Sempre que possÃ­vel, publicar prÃ©via de Hosting (channel deploy) e compartilhar a URL para validaÃ§Ã£o antes do deploy final do dashboard.
 - Objetivo: testar mudanÃ§as de multi-tenant/admin sem afetar usuÃ¡rios em produÃ§Ã£o; ao aprovar, promover ou executar deploy normal.
+
+## Versionamento (repo público) e sigilo
+- Este repo é público. Nunca commit tokens/chaves em docs ou código. Use Secret Manager e variáveis .env locais.
+- Os arquivos sensíveis de integrações (apis_e_mcp, taskora_google_meta, GA4_taskora, pinterest_mcp_plan, tutorial_acesso_apis_mcp, seed_scheduler) estão no .gitignore para evitar vazamento. Mantenha-os fora do Git ou só com placeholders.
+- Antes de push, revise docs novos para não expor credenciais. Tokens reais devem ficar apenas no Secret Manager (Cloud Run via --set-secrets).
+
+
