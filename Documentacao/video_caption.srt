@@ -1,0 +1,31 @@
+1
+00:00:00,000 --> 00:00:07,000
+Opening Taskora and signing in with Google—same flow our clients use.
+
+2
+00:00:07,000 --> 00:00:13,000
+Landing on the Clients page; every client has a consolidated profile.
+
+3
+00:00:13,000 --> 00:00:19,000
+Opening the 360° view: we show linked platforms and health at a glance.
+
+4
+00:00:19,000 --> 00:00:26,000
+Refreshing the Meta Ads card—this pulls spend and status via the Meta Marketing API.
+
+5
+00:00:26,000 --> 00:00:33,000
+We need instagram_basic and instagram_business_basic to add Instagram account insights here.
+
+6
+00:00:33,000 --> 00:00:40,000
+We’ll display Instagram side-by-side with Meta Ads so ops teams act faster.
+
+7
+00:00:40,000 --> 00:00:47,000
+Data is read-only, tied to authenticated org users, and never shared outside each workspace.
+
+8
+00:00:47,000 --> 00:00:54,000
+Everything is audited and stored in Firestore; tokens stay on our backend for safety.

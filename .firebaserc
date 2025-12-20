@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "dacora---tarefas"
+  },
+  "targets": {
+    "dacora---tarefas": {
+      "hosting": {
+        "privacy": [
+          "dacora---tarefas"
+        ],
+        "dashboard": [
+          "taskora-dashboard"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "@taskora/tsconfig",
+  "version": "0.1.0",
+  "private": false,
+  "main": "base.json"
+}

@@ -1,0 +1,181 @@
+[
+  {
+    "accountName": "Hannover",
+    "accountId": "175492763",
+    "properties": [
+      { "propertyId": "398907411", "displayName": "Hannover - GA4" },
+      { "propertyId": "472674551", "displayName": "Hannover Tomahawk" }
+    ]
+  },
+  {
+    "accountName": "Nanda Cora",
+    "accountId": "195680050",
+    "properties": [
+      { "propertyId": "270511251", "displayName": "Nanda Cora - Real" },
+      { "propertyId": "272657549", "displayName": "NandaAnalytics" }
+    ]
+  },
+  {
+    "accountName": "Santalberti",
+    "accountId": "201201451",
+    "properties": [
+      { "propertyId": "278056631", "displayName": "santalberti" }
+    ]
+  },
+  {
+    "accountName": "Kisma Negocios",
+    "accountId": "203299751",
+    "properties": [
+      { "propertyId": "280743585", "displayName": "Gerenciamento" },
+      { "propertyId": "317369610", "displayName": "Kisma agencia" },
+      { "propertyId": "320093381", "displayName": "[KISMA]-[MARRIE]-[LOJA INTEGRADA]" }
+    ]
+  },
+  {
+    "accountName": "Aviarte",
+    "accountId": "209051900",
+    "properties": [
+      { "propertyId": "291776738", "displayName": "Aviarte - GA4" }
+    ]
+  },
+  {
+    "accountName": "Lele da Cuca",
+    "accountId": "230500414",
+    "properties": [
+      { "propertyId": "317508848", "displayName": "Lele da Cuca - Site Novo" }
+    ]
+  },
+  {
+    "accountName": "Flavio Cora",
+    "accountId": "269849457",
+    "properties": [
+      { "propertyId": "378644178", "displayName": "F1 Marketing" }
+    ]
+  },
+  {
+    "accountName": "Comprazzo Loja Online",
+    "accountId": "273196606",
+    "properties": [
+      { "propertyId": "383241927", "displayName": "Comprazzo Yampi" }
+    ]
+  },
+  {
+    "accountName": "Rio Brazilian Wax",
+    "accountId": "28021867",
+    "properties": []
+  },
+  {
+    "accountName": "Candela Fragrances Brasil",
+    "accountId": "283716904",
+    "properties": [
+      { "propertyId": "404970102", "displayName": "GA - Candela Fragrances BR" }
+    ]
+  },
+  {
+    "accountName": "Karyne Magalhaes",
+    "accountId": "284387276",
+    "properties": [
+      { "propertyId": "416710996", "displayName": "Karyne Magalhaes" }
+    ]
+  },
+  {
+    "accountName": "Narah - Gestao",
+    "accountId": "296775732",
+    "properties": [
+      { "propertyId": "420360123", "displayName": "Gestao Narah" }
+    ]
+  },
+  {
+    "accountName": "Lele da Cuca - Narah",
+    "accountId": "330359400",
+    "properties": [
+      { "propertyId": "460073592", "displayName": "Lele da Cuca" }
+    ]
+  },
+  {
+    "accountName": "UniGoyazes",
+    "accountId": "335379126",
+    "properties": [
+      { "propertyId": "465874305", "displayName": "UniGoyazes" }
+    ]
+  },
+  {
+    "accountName": "Baby Raia | Kelly",
+    "accountId": "345868791",
+    "properties": [
+      { "propertyId": "478277421", "displayName": "Baby Raia" }
+    ]
+  },
+  {
+    "accountName": "EXC Foods",
+    "accountId": "346385721",
+    "properties": [
+      { "propertyId": "478855395", "displayName": "EXC FOODS" }
+    ]
+  },
+  {
+    "accountName": "Oxen Currais",
+    "accountId": "347352169",
+    "properties": [
+      { "propertyId": "479938834", "displayName": "Oxen Currais" }
+    ]
+  },
+  {
+    "accountName": "Smart Cartorio Digital",
+    "accountId": "350756354",
+    "properties": [
+      { "propertyId": "483970467", "displayName": "Smart Cart Digital" }
+    ]
+  },
+  {
+    "accountName": "NH Painting",
+    "accountId": "360741773",
+    "properties": [
+      { "propertyId": "495922665", "displayName": "newhopepainting" }
+    ]
+  },
+  {
+    "accountName": "Dr Luigi - Site GA4",
+    "accountId": "363302692",
+    "properties": [
+      { "propertyId": "498940122", "displayName": "Dr Luigi - Site" }
+    ]
+  },
+  {
+    "accountName": "LR Abril Atacadista",
+    "accountId": "364714383",
+    "properties": [
+      { "propertyId": "500639479", "displayName": "Rei dos Pulverizadores" }
+    ]
+  },
+  {
+    "accountName": "Goias Cortinas",
+    "accountId": "368634085",
+    "properties": [
+      { "propertyId": "505311117", "displayName": "Goias Cortinas" }
+    ]
+  },
+  {
+    "accountName": "Demo Account",
+    "accountId": "54516992",
+    "properties": [
+      { "propertyId": "153293282", "displayName": "GA4 - Flood-It!" },
+      { "propertyId": "213025502", "displayName": "GA4 - Google Merch Shop" },
+      { "propertyId": "508138133", "displayName": "LG Property" }
+    ]
+  },
+  {
+    "accountName": "Escobar Advogados",
+    "accountId": "74595541",
+    "properties": []
+  },
+  
+  {
+  "accountName": "Avlon",
+  "accountId": "91045397",
+  "properties": [
+    { "propertyId": "336422131", "displayName": "Avlon Ecomm - GA4" }
+  ]
+}
+
+]

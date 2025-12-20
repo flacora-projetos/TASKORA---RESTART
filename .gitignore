@@ -1,0 +1,30 @@
+node_modules
+dist
+.next
+.turbo
+.DS_Store
+*.log
+logs
+
+# Env files
+.env
+.env.*
+!*.env.example
+apps/api/.env
+apps/api/.env.*
+apps/web/.env
+apps/web/.env.*
+
+# Credentials / keys
+service-account.json
+**/serviceAccount*.json
+**/*firebase*key*.json
+**/*credentials*.json
+**/*.pem
+**/*.p12
+**/*.key
+
+# Build artifacts
+apps/web/.next
+apps/api/dist
+tmp

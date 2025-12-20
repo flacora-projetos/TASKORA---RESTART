@@ -1,0 +1,2 @@
+(Get-Content -Path "apps/web/components/calendar/CalendarShell.tsx") -join "
+"

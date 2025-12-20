@@ -1,0 +1,7 @@
+{
+  "name": "@taskora/prettier-config",
+  "version": "0.1.0",
+  "private": false,
+  "type": "commonjs",
+  "main": "index.cjs"
+}

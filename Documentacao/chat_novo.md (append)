@@ -1,0 +1,4 @@
+## 2025-11-18 - Deploy + ajuste Firebase
+- Adicionei `esbuild`, `firebase-frameworks@0.11.8`, `firebase-functions@^6.1.0` e `which` ao `apps/web/package.json`, alem dos helpers `scripts/which.cmd` e `scripts/esbuild.cmd`, para expor o binario do esbuild no Windows.
+- Antes do deploy executo `set PATH=<repo>\scripts;<repo>\apps\web\node_modules\.bin;%PATH%` (ou equivalente no PowerShell) para que o `npx which esbuild` do Firebase enxergue o executavel local e nao tente reinstalar `esbuild`.
+- Deploy publicado: `npx -p node@20 -p firebase-tools firebase deploy --only hosting:dashboard` → https://taskora-dashboard.web.app.

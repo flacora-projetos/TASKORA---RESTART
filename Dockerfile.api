@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1.5
+
+FROM node:20-bookworm AS builder
+WORKDIR /workspace
+ENV HUSKY=0
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps ./apps
+COPY packages ./packages
+
+RUN corepack enable pnpm \
+  && pnpm install --ignore-scripts --frozen-lockfile \
+  && pnpm --filter @taskora/api build
+
+FROM node:20-bookworm-slim AS runner
+WORKDIR /workspace
+ENV NODE_ENV=production
+ENV HUSKY=0
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages ./packages
+
+RUN corepack enable pnpm \
+  && pnpm install --ignore-scripts --filter @taskora/api --prod --frozen-lockfile
+
+COPY --from=builder /workspace/apps/api/dist ./apps/api/dist
+
+EXPOSE 8080
+CMD ["node", "apps/api/dist/main.js"]

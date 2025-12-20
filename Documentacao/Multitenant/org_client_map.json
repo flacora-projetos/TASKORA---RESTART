@@ -1,0 +1,688 @@
+{
+  "generatedAt": "2025-12-17T02:21:54.539Z",
+  "orgCodes": {
+    "D": "Dacora",
+    "A": "Allgrotech",
+    "N": "Narah Lopes"
+  },
+  "clients": [
+    {
+      "clientId": "c1V6Qm3siIqTrAHj9zBd",
+      "name": "[CA] Daniela Moraes Design",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "qkP2og1ta94fB5bOnyWQ",
+      "name": "[COLÉGIOS MONTESSORI E SAGRADO CORAÇÃO]",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "d3NhBvUEf3UPjHyPbpbU",
+      "name": "[TôdBaby] - Conta de Anúncios",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "lzsFkjZ1mJkYw7pkShdH",
+      "name": "#1 BM Pedro",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "OJD0XlCBvUEDFWw3CZGu",
+      "name": "Agrisys",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "3asUZ5lv3YQzpZh8nGgO",
+      "name": "AllgroTech",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "DlyHZ0E81IEou3UdpyYt",
+      "name": "Ambientale Engenharia",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "qRnGQUfeCt0HddZRbgax",
+      "name": "Aphase",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "Yd58gCeXR4IFFwrMkaZz",
+      "name": "Átomo Soluções",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "soIP3CoCMm70bxtciSUx",
+      "name": "Aviarte",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "k0EE67erddVHwYznCkZF",
+      "name": "Avlon",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "pwI6ThhuIhU6KDbKDwQg",
+      "name": "B3X",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "V1kyp8A50xVF4anAisFa",
+      "name": "Baby Raia",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "OEyMlnOK2S9zAuOhEDQ9",
+      "name": "Baby Raia - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "dKpFgz4TboCyO2rIyNfg",
+      "name": "Bio ads",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "rE3JKGyPkzEt8i833e1C",
+      "name": "C1",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "AqHELnoWg7xyjgWRAdl9",
+      "name": "CA - Dra Maria Cruvinel",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "Kr26SM2YI1Dxqhjq1VMe",
+      "name": "CA - SUZANA ENFERMEIRA",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "nAcwfdBvtxjGnGatTUOs",
+      "name": "CA Perna no Mundo",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "01i4tSenJR3T6XezRv3i",
+      "name": "CA1 - Nucia Pires",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "g3IDXIJrSx6K0xoWhC7v",
+      "name": "Candela Fragrances - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "gIUaeYLpAq7y0YQK8Ugg",
+      "name": "Candela Fragrances - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "2SmG82C0D6JL4WOJPxgC",
+      "name": "CANDELA FRAGRANCES BRASIL",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "MV0knSPVtnpblW8zqSzd",
+      "name": "Chá de Mentta",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "NIW4dYsEPK7htn6zbStB",
+      "name": "Colégio IMACULADA - MONTES CLAROS",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "ZLCJ0LOWeK5wezLVCqS0",
+      "name": "Colégio Imaculada Conceição",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "pqQR6acd92bbcREzVgsh",
+      "name": "Colégio Montessori",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "lYI6MBLeMslhcrKxxRNb",
+      "name": "Colégio Sagrado Coração - Araguari",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "VW9tMENxx3jAQGHt9OUl",
+      "name": "Comprazzo Backup",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "nUs6OBgaSSoDYYm2lQox",
+      "name": "Comprazzo Backup 02",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "KZFMxSIYWjzfkq1eMJQQ",
+      "name": "Conviê",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "pO45E0RlREA6VORfhyzw",
+      "name": "Cria Fértil",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "SxbCKPZOhnGclwSelETK",
+      "name": "Dácora",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "7GvlLgdbLMUU2sdtGIrm",
+      "name": "Dazzie Joias",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "jByCRN3jrKeTdHTqKZYp",
+      "name": "Deborah B. S. T. Almeida",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "V9jJwKnjjGIKc4jTjBQz",
+      "name": "DISCOMETAL",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "6DY66L8KwrWKmiSLxaCy",
+      "name": "Dr. Flávio Zenun",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "X76EzxrSmFTcqhMBuCHt",
+      "name": "Dr. Lucas Bulcão",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "w0L8tHHnhJJMDw4TTwe4",
+      "name": "Dr. Lucas Dal Pozzo Sartori",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "ur7076qR1FyTiYHPi0Sz",
+      "name": "Dr. Luigi Seronni - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "6O8iIPnS4I3r63DU36Uy",
+      "name": "Dra. Maria Nazaré",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "jEZSvGQnhemNsf0dXuVp",
+      "name": "Dra. Maria Nazaré",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "MEwWuasrxJIUsu3u2tVk",
+      "name": "Duro PVC",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "BqpIHWrZ3a1M0HaLieRf",
+      "name": "Eliana Farias",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "oA7XBTpJBPifP2vKDHzy",
+      "name": "EXC Foods",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "kPsagkPcBgyPxT7oox4w",
+      "name": "EXC Foods - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "RlTN9MAFhqy7pMmmnIR8",
+      "name": "Exuberance Móveis Planejados",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "r1J15djLukAPz25mquI7",
+      "name": "FACULDADE SOBRESP",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "LCRXjb6mP8ZznbvfLOtS",
+      "name": "Faculdade União de Goyazes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "MIoxt67QeLEJJddNRyE9",
+      "name": "Faculdade UniGoyazes - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "ZpVChon5flsaeGrbF68A",
+      "name": "Fatto a mano",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "LaaSzO64HmZObaVUxIuR",
+      "name": "Fernanda Corá - Dácora",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "a0KiYA3kGntoRNvLITp8",
+      "name": "FGC MCC",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "av06bCBOc91Z5tFUMnEa",
+      "name": "flacora",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "UKQbBUY2t9rIkN8tqKOv",
+      "name": "Flávio Corá",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "Br2uVPP5ARKrtoYDukKX",
+      "name": "For Agro",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "YISqES53OQGPPmWmXkuL",
+      "name": "Gabriela Sartori",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "nC8oJKBIfUgt8KYAaCEO",
+      "name": "Gian Tullio",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "K4koPVVFkPKtkg8nkWyK",
+      "name": "Goiás Cortinas - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "ivdAWA4fSKxIhEryhjUX",
+      "name": "Grupo Gusmão Lima",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "lFqNAe9KwOknDJEC430F",
+      "name": "Hannover Fondue",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "bY2BB5zrI9GodYOignlR",
+      "name": "Hannover Restaurante",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "GNas9fElYQGN6V1NQBog",
+      "name": "ICH Agropastoril",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "F5jdUQUemAUt3z88t38Z",
+      "name": "Karyne Magalhães",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "hoTgT0XyRelvYT9Nqvdp",
+      "name": "KBL Contabilidade",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "OIH38sTKvDMF3uWhk6me",
+      "name": "La Belle",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "KjlKeVULqHxSTBBsSCpj",
+      "name": "Lele da Cuca",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "EyWCbCVGnnNoVjQ5N8H2",
+      "name": "Lelé da Cuca",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "5vp42D3YoTp4XxS7Mh9q",
+      "name": "Líder Rolamentos",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "MH8v12TzWLxwEf7Z2Y6H",
+      "name": "Loja Virtual Backup",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "ShMfIm0BJdQea4ZBrUwC",
+      "name": "Make Pack",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "MG6ZDIAz0xTnYDraOcP2",
+      "name": "Make Plant",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "HgnfSqlMCgVZZc9w91w4",
+      "name": "Marrie",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "2L1SEGNbzIVrSBlLiLfk",
+      "name": "Marriê for you Home",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "ZJCVi61rNmHjBj8BUVaB",
+      "name": "MCC - NARAH",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "Hxrcy4ZfCrNzQOpUoOmk",
+      "name": "Minerthal Prod Agrop Ltda",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "b768sEKlCnRNp5rhMbz2",
+      "name": "New Hope",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "zGkmTqWnORQw0OulAlIe",
+      "name": "New Hope Cabinets Painting",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "vTkap8xdGxOfXxDJGqf2",
+      "name": "Nova Empresa",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "l5Ax3XiGCnGPEsjyYJUc",
+      "name": "Núcia Pires - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "BDWlf6TY4Muo82dSsEpe",
+      "name": "Nutrifol",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "LzFMNORRWq7ReH1aMuET",
+      "name": "Otimiza",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "gT3jrftEDzGSw52y5tmH",
+      "name": "Oxen Currais",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "z9XzMHFcKlT9CogigdXd",
+      "name": "Oxen Currais",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "aWDPt5oTRhPO1AWHxXFe",
+      "name": "Oxen Currais - Cartão de Crédito",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "xKoaRFz9iUnlxtSSsMjH",
+      "name": "Petmadeira",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "ok4mZuQ6OYuYFwTxw0IL",
+      "name": "Pratas e Pedras",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "mPz224pdtL3yaBKjeROE",
+      "name": "Precisão Agronegócios",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "GEslrRIGQnpilBql4AAc",
+      "name": "Precisão Consultoria",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "55c2niUh12koWJTmbGpM",
+      "name": "Profarm",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "dGylnOLmT6WzbBgwEJsR",
+      "name": "Profarm",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "1bxji9izOYT3uQwabjD8",
+      "name": "Rei dos Pulverizadores",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "f2N4eLQxavig3f4tAma7",
+      "name": "Sant'Alberti",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "L8zAqHhievgDQIcJX7Fr",
+      "name": "Sementes Santa Fé",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "dTuMw8K9BuAVgNJm1zOD",
+      "name": "Séptimus",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "4rclRSC7XTClxinsg65F",
+      "name": "Smart Cartório - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "yvKl9yqGRkqNEfX0D3qh",
+      "name": "Smart Cartório Digital",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "1GyV3yAKIUuK5QL6xXsx",
+      "name": "SOBRESP Araguari - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "ozwYvihw0HWfAIPs30jZ",
+      "name": "Sobresp Cristalina - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "cTpeESfln78SlwY7xOKa",
+      "name": "SOBRESP Pires do Rio - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "ZbnBPcdatrqJbmyGpq4f",
+      "name": "SOBRESP PÓS-GRADUAÇÃO",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "DniLN6TFgJAnzuBc4LIa",
+      "name": "SOBRESP Santa Maria - Narah Lopes",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "I9CEA2FwbaZSjVLttG6I",
+      "name": "Suplimarcas – Conta de anúncios",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "WFDmuZ6mEZmB13EHDG8y",
+      "name": "Taisa Gauer",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "Vx5giqWzaGYBv2mT9wJr",
+      "name": "Tratto Agro",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "9lfRfIvV3Arim1SToTvt",
+      "name": "Verde Verduras",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "kaPx3QiiL2d1tiU3RLlK",
+      "name": "VETAGRO",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "WXsQdnKONn84mFlbwIX6",
+      "name": "VetSell",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "M5pA9H4ZdcVcfS90nqj6",
+      "name": "Vetsell Agro",
+      "currentOrgId": "org-dev",
+      "org": "A"
+    },
+    {
+      "clientId": "x2anYBUKaRpIAQO6Mwo5",
+      "name": "Viagem dos Sonhos",
+      "currentOrgId": "org-dev",
+      "org": "N"
+    },
+    {
+      "clientId": "4BU4xXZOdrZQxjiEhLm8",
+      "name": "Voz Marketing",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "549YlpCDRtG4hpuPSBUM",
+      "name": "WILSON Estudos Avançados",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    },
+    {
+      "clientId": "dVrZDKuyl8tcQ0hqBNMf",
+      "name": "Yuri Corá",
+      "currentOrgId": "org-dev",
+      "org": "D"
+    }
+  ]
+}

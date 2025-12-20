@@ -1,0 +1,4146 @@
+﻿"use client";
+
+import { FormEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { TASK_STATUS_LABELS, TASK_STATUS_ORDER, TASK_STATUS_STYLES } from "../../constants/tasks";
+import { apiFetch, ApiError } from "../../lib/api";
+import type {
+  TaskEntity,
+  TaskOverviewAssignee,
+  TaskOverviewCard,
+  TaskOverviewItem,
+  TaskOverviewProject,
+  TaskOverviewResponse,
+  TaskPriorityTag,
+  TaskStatus,
+  TaskType
+} from "../../types/tasks";
+import { useAuth } from "../auth/AuthProvider";
+
+
+
+type OverviewQuickPeriod = "none" | "today" | "week" | "month" | "last7" | "last30" | "custom";
+
+
+
+type TasksFiltersState = {
+
+  status: TaskStatus | "all";
+
+  type: TaskType | "all";
+
+  assigneeId: string;
+
+  clientId: string;
+
+  projectId: string;
+
+  platform: string;
+
+  period: OverviewQuickPeriod;
+
+  from: string;
+
+  to: string;
+
+  search: string;
+
+};
+
+
+
+const INITIAL_FILTERS: TasksFiltersState = {
+
+  status: "all",
+
+  type: "all",
+
+  assigneeId: "all",
+
+  clientId: "all",
+
+  projectId: "all",
+
+  platform: "all",
+
+  period: "week",
+
+  from: "",
+
+  to: "",
+
+  search: ""
+
+};
+
+
+
+const PERIOD_PRESETS: Array<{ value: OverviewQuickPeriod; label: string }> = [
+
+  { value: "today", label: "Hoje" },
+
+  { value: "week", label: "Esta semana" },
+
+  { value: "month", label: "Este mÃªs" },
+
+  { value: "last7", label: "Ãšltimos 7 dias" },
+
+  { value: "last30", label: "Ãšltimos 30 dias" },
+
+  { value: "none", label: "Sem filtro" }
+
+];
+
+
+
+const PRIORITY_LABELS: Record<TaskPriorityTag, string> = {
+
+  overdue: "Atrasada",
+
+  due_today: "Hoje",
+
+  upcoming: "PrÃ³xima",
+
+  no_due_date: "Sem prazo",
+
+  completed: "ConcluÃ­da"
+
+};
+
+
+
+const PRIORITY_STYLES: Record<TaskPriorityTag, string> = {
+
+  overdue: "bg-rose-100 text-rose-800 border-rose-200",
+
+  due_today: "bg-amber-100 text-amber-900 border-amber-200",
+
+  upcoming: "bg-emerald-100 text-emerald-900 border-emerald-200",
+
+  no_due_date: "bg-slate-100 text-slate-700 border-slate-200",
+
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-100"
+
+};
+
+
+
+const PLATFORM_TONES: Record<string, string> = {
+
+  google: "bg-amber-50 text-amber-700 border-amber-200",
+
+  meta: "bg-sky-50 text-sky-700 border-sky-200",
+
+  ga4: "bg-indigo-50 text-indigo-700 border-indigo-200",
+
+  pinterest: "bg-rose-50 text-rose-700 border-rose-200",
+
+  tiktok: "bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200",
+
+  other: "bg-slate-50 text-slate-600 border-slate-200"
+
+};
+
+
+
+const ASSIGNEE_COLORS = [
+
+  "bg-emerald-600",
+
+  "bg-amber-600",
+
+  "bg-rose-500",
+
+  "bg-sky-600",
+
+  "bg-indigo-600",
+
+  "bg-stone-600"
+
+];
+
+
+
+const DATE_FROM_INPUT_ID = "tasks-filter-from";
+
+const DATE_TO_INPUT_ID = "tasks-filter-to";
+
+const SEARCH_INPUT_ID = "tasks-filter-search";
+
+
+
+function convertDateInputToISO(value: string): string | null {
+
+  if (!value) {
+
+    return null;
+
+  }
+
+  const parsed = new Date(`${value}T12:00:00Z`);
+
+  if (Number.isNaN(parsed.getTime())) {
+
+    return null;
+
+  }
+
+  return parsed.toISOString();
+
+}
+
+
+
+function formatISOToDateInput(value: string | null): string {
+
+  if (!value) {
+
+    return "";
+
+  }
+
+  return value.slice(0, 10);
+
+}
+
+
+
+const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
+
+  day: "2-digit",
+
+  month: "short"
+
+});
+
+
+
+const FULL_DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
+
+  day: "2-digit",
+
+  month: "long",
+
+  year: "numeric"
+
+});
+
+
+
+type FetchState = "idle" | "loading" | "loaded";
+
+
+
+type CreateTaskForm = {
+
+  title: string;
+
+  projectId: string;
+
+  assignees: string[];
+
+  dueDate: string;
+
+  type: TaskType;
+
+  status: TaskStatus;
+
+  notes: string;
+
+};
+
+
+
+const CREATE_TASK_DEFAULT: CreateTaskForm = {
+
+  title: "",
+
+  projectId: "",
+
+  assignees: [],
+
+  dueDate: "",
+
+  type: "other",
+
+  status: "todo",
+
+  notes: ""
+
+};
+
+
+
+type FocusEditForm = {
+
+  title: string;
+
+  assignees: string[];
+
+  dueDate: string;
+
+  status: TaskStatus;
+
+};
+
+
+
+export function TasksPage(): JSX.Element {
+
+  const { token, status: authStatus } = useAuth();
+
+  const isAuthenticated = authStatus === "authenticated" && Boolean(token);
+
+
+
+  const [filters, setFilters] = useState<TasksFiltersState>(INITIAL_FILTERS);
+
+  const [searchInput, setSearchInput] = useState("");
+
+  const [overview, setOverview] = useState<TaskOverviewResponse | null>(null);
+
+  const [fetchState, setFetchState] = useState<FetchState>("idle");
+
+  const [error, setError] = useState<string | null>(null);
+
+  const [mutation, setMutation] = useState<{ taskId: string } | null>(null);
+
+  const [quickFeedback, setQuickFeedback] = useState<string | null>(null);
+
+  const [rescheduleTarget, setRescheduleTarget] = useState<{ taskId: string; date: string } | null>(null);
+
+  const [focusTask, setFocusTask] = useState<TaskOverviewItem | null>(null);
+
+  const [focusDetails, setFocusDetails] = useState<TaskEntity | null>(null);
+
+  const [focusState, setFocusState] = useState<"idle" | "loading" | "loaded" | "error">("idle");
+
+  const [focusError, setFocusError] = useState<string | null>(null);
+
+  const [noteText, setNoteText] = useState("");
+
+  const [noteState, setNoteState] = useState<"idle" | "saving">("idle");
+
+  const [noteFeedback, setNoteFeedback] = useState<string | null>(null);
+
+  const [focusEditForm, setFocusEditForm] = useState<FocusEditForm | null>(null);
+
+  const [focusEditState, setFocusEditState] = useState<"idle" | "saving">("idle");
+
+  const [focusEditFeedback, setFocusEditFeedback] = useState<{
+
+    type: "success" | "error";
+
+    message: string;
+
+  } | null>(null);
+
+  const [assigneeOverrides, setAssigneeOverrides] = useState<Record<string, TaskOverviewAssignee[]>>({});
+
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const [createForm, setCreateForm] = useState<CreateTaskForm>(CREATE_TASK_DEFAULT);
+
+  const [createState, setCreateState] = useState<"idle" | "saving">("idle");
+
+  const [createFeedback, setCreateFeedback] = useState<string | null>(null);
+
+  const detailsCacheRef = useRef<Map<string, TaskEntity>>(new Map());
+
+  const focusEditVersionRef = useRef<string | null>(null);
+  const availableAssigneesRef = useRef<TaskOverviewAssignee[]>([]);
+
+
+
+  const loadOverview = useCallback(
+
+    async (currentToken: string, currentFilters: TasksFiltersState) => {
+
+      setFetchState("loading");
+
+      setError(null);
+
+      try {
+
+        const query = buildQueryFromFilters(currentFilters);
+
+        const response = await apiFetch<TaskOverviewResponse>("/tasks/overview", {
+
+          token: currentToken,
+
+          query
+
+        });
+
+        setOverview(response);
+
+        setAssigneeOverrides((prev) => {
+
+          let changed = false;
+
+          const next = { ...prev };
+
+          response.items.forEach((item) => {
+
+            if (item.assignees.length > 0 && next[item.id]) {
+
+              delete next[item.id];
+
+              changed = true;
+
+            }
+
+          });
+
+          return changed ? next : prev;
+
+        });
+
+        setFetchState("loaded");
+
+      } catch (err) {
+
+        const message =
+
+          err instanceof ApiError ? err.message : "Nuo conseguimos carregar as tarefas agora.";
+
+        setError(message);
+
+        setFetchState("loaded");
+
+      }
+
+    },
+
+    []
+
+  );
+
+  const fetchTaskDetails = useCallback(
+    async (task: TaskOverviewItem, options: { force?: boolean } = {}) => {
+      if (!task) {
+        return;
+      }
+      if (!token) {
+        setFocusDetails(null);
+        setFocusState("idle");
+        return;
+      }
+      if (!task.project?.id) {
+        setFocusDetails(null);
+        setFocusState("loaded");
+        setFocusError("Tarefa sem projeto vinculado.");
+        return;
+      }
+
+      const cached = detailsCacheRef.current.get(task.id);
+      if (cached && !options.force) {
+        setFocusDetails(cached);
+        setFocusState("loaded");
+        setFocusError(null);
+        return;
+      }
+
+      setFocusState("loading");
+      setFocusError(null);
+
+      try {
+        const response = await apiFetch<{ items: TaskEntity[] }>(`/projects/${task.project.id}/tasks`, {
+          token
+        });
+        const found = response.items.find((item) => item.id === task.id) ?? null;
+        if (found) {
+          detailsCacheRef.current.set(task.id, found);
+        }
+        setFocusDetails(found);
+        setFocusState("loaded");
+        if (found) {
+          const derivedAssignees = (found.assignees ?? []).map((id) => {
+            const member = availableAssigneesRef.current.find((assignee) => assignee.id === id);
+            return member ?? { id, name: "Sem cadastro", color: null, role: null };
+          });
+          if (derivedAssignees.length > 0) {
+            setAssigneeOverrides((prev) => {
+              const current = prev[found.id];
+              const isSame =
+                current &&
+                current.length === derivedAssignees.length &&
+                current.every((item, index) => item.id === derivedAssignees[index].id);
+              if (isSame) {
+                return prev;
+              }
+              return {
+                ...prev,
+                [found.id]: derivedAssignees
+              };
+            });
+          }
+        }
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : "Nuo conseguimos carregar os detalhes da tarefa.";
+        setFocusError(message);
+        setFocusState("error");
+      }
+    },
+    [token]
+  );
+
+  const handleSelectTask = useCallback((task: TaskOverviewItem) => {
+
+    setFocusTask(task);
+
+  }, []);
+
+
+
+  const handleCloseFocus = useCallback(() => {
+
+    setFocusTask(null);
+
+    setFocusDetails(null);
+
+    setFocusState("idle");
+
+    setFocusError(null);
+
+    setNoteText("");
+
+    setNoteFeedback(null);
+
+    setFocusEditForm(null);
+
+    setFocusEditFeedback(null);
+
+    setFocusEditState("idle");
+
+    focusEditVersionRef.current = null;
+
+  }, []);
+
+
+
+  useEffect(() => {
+
+    if (!token) {
+
+      return;
+
+    }
+
+    void loadOverview(token, filters);
+
+  }, [token, filters, loadOverview]);
+
+
+
+  useEffect(() => {
+
+    if (!searchInput.trim() && filters.search === "") {
+
+      return;
+
+    }
+
+    const timer = setTimeout(() => {
+
+      setFilters((prev) => {
+
+        const normalized = searchInput.trim();
+
+        if (prev.search === normalized) {
+
+          return prev;
+
+        }
+
+        return { ...prev, search: normalized };
+
+      });
+
+    }, 350);
+
+    return () => clearTimeout(timer);
+
+  }, [searchInput, filters.search]);
+
+
+
+  useEffect(() => {
+
+    if (!focusTask) {
+
+      setFocusDetails(null);
+
+      setNoteText("");
+
+      setNoteFeedback(null);
+
+      if (focusState !== "idle") {
+
+        setFocusState("idle");
+
+        setFocusError(null);
+
+      }
+
+      return;
+
+    }
+
+    setNoteText("");
+
+    setNoteFeedback(null);
+
+    void fetchTaskDetails(focusTask);
+
+  }, [focusTask, fetchTaskDetails, focusState]);
+
+
+
+  useEffect(() => {
+
+    if (!overview || !focusTask) {
+
+      return;
+
+    }
+
+    const updated = overview.items.find((item) => item.id === focusTask.id);
+
+    if (!updated) {
+
+      handleCloseFocus();
+
+      return;
+
+    }
+
+    if (updated.updatedAt !== focusTask.updatedAt) {
+
+      setFocusTask(updated);
+
+    }
+
+  }, [overview, focusTask, handleCloseFocus]);
+
+
+
+  useEffect(() => {
+
+    const handleScroll = () => {
+
+      setShowBackToTop(window.scrollY > 400);
+
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+
+  }, []);
+
+
+
+  useEffect(() => {
+
+    if (!focusTask) {
+
+      setFocusEditForm(null);
+
+      setFocusEditFeedback(null);
+
+      setFocusEditState("idle");
+
+      focusEditVersionRef.current = null;
+
+      return;
+
+    }
+
+    const source = focusDetails && focusDetails.id === focusTask.id ? focusDetails : null;
+
+    const versionKey = `${focusTask.id}:${source?.updatedAt ?? focusTask.updatedAt}`;
+
+    if (focusEditVersionRef.current === versionKey && focusEditForm) {
+
+      return;
+
+    }
+
+    focusEditVersionRef.current = versionKey;
+
+    setFocusEditForm({
+
+      title: source?.title ?? focusTask.title,
+
+      status: source?.status ?? focusTask.status,
+
+      dueDate: formatISOToDateInput(source?.dueDate ?? focusTask.dueDate),
+
+      assignees: source?.assignees ?? focusTask.assignees.map((assignee) => assignee.id)
+
+    });
+
+    setFocusEditFeedback(null);
+
+  }, [focusTask, focusDetails, focusEditForm]);
+
+
+
+  useEffect(() => {
+
+    if (!quickFeedback) {
+
+      return;
+
+    }
+
+    const timer = setTimeout(() => setQuickFeedback(null), 4000);
+
+    return () => clearTimeout(timer);
+
+  }, [quickFeedback]);
+
+
+
+  useEffect(() => {
+
+    if (!overview?.filters.projects || overview.filters.projects.length === 0) {
+
+      return;
+
+    }
+
+    setCreateForm((prev) => {
+
+      if (prev.projectId) {
+
+        return prev;
+
+      }
+
+      return {
+
+        ...prev,
+
+        projectId: overview.filters.projects[0]?.id ?? ""
+
+      };
+
+    });
+
+  }, [overview]);
+
+
+
+  const applyQuickUpdates = useCallback(
+
+    async (task: TaskOverviewItem, updates: Record<string, unknown>, successMessage?: string) => {
+
+      if (!token) {
+
+        setQuickFeedback("FaÃ§a login para atualizar as tarefas.");
+
+        return;
+
+      }
+
+      if (!task.project?.id) {
+
+        setQuickFeedback("Associe a tarefa a um projeto para usar as aÃ§Ãµes rÃ¡pidas.");
+
+        return;
+
+      }
+
+
+
+      setMutation({ taskId: task.id });
+
+      setQuickFeedback(null);
+
+
+
+      try {
+
+        await apiFetch(`/projects/${task.project.id}/tasks/${task.id}`, {
+
+          token,
+
+          method: "PUT",
+
+          body: updates
+
+        });
+
+        detailsCacheRef.current.delete(task.id);
+
+        await loadOverview(token, filters);
+
+        if (focusTask && focusTask.id === task.id) {
+
+          await fetchTaskDetails(task, { force: true });
+
+        }
+
+        if (successMessage) {
+
+          setQuickFeedback(successMessage);
+
+        }
+
+      } catch (err) {
+
+        const message =
+
+          err instanceof ApiError ? err.message : "NÃ£o conseguimos aplicar a aÃ§Ã£o rÃ¡pida.";
+
+        setQuickFeedback(message);
+
+      } finally {
+
+        setMutation(null);
+
+        setRescheduleTarget((current) => (current?.taskId === task.id ? null : current));
+
+      }
+
+    },
+
+    [token, filters, loadOverview, focusTask, fetchTaskDetails]
+
+  );
+
+
+
+  const handleMarkDone = useCallback(
+
+    (task: TaskOverviewItem) => applyQuickUpdates(task, { status: "done" }, "Tarefa concluÃ­da!"),
+
+    [applyQuickUpdates]
+
+  );
+
+
+
+  const handleMarkReview = useCallback(
+
+    (task: TaskOverviewItem) =>
+
+      applyQuickUpdates(task, { status: "review" }, "Marcamos como revisÃ£o."),
+
+    [applyQuickUpdates]
+
+  );
+
+
+
+  const handleRescheduleOpen = useCallback((task: TaskOverviewItem) => {
+
+    setRescheduleTarget({ taskId: task.id, date: formatISOToDateInput(task.dueDate) });
+
+  }, []);
+
+
+
+  const handleRescheduleDateChange = useCallback((value: string) => {
+
+    setRescheduleTarget((current) => {
+
+      if (!current) {
+
+        return current;
+
+      }
+
+      return { ...current, date: value };
+
+    });
+
+  }, []);
+
+
+
+  const handleRescheduleCancel = useCallback(() => {
+
+    setRescheduleTarget(null);
+
+  }, []);
+
+
+
+  const handleRescheduleSubmit = useCallback(
+
+    (task: TaskOverviewItem) => {
+
+      if (!rescheduleTarget || rescheduleTarget.taskId !== task.id) {
+
+        return;
+
+      }
+
+      const iso = convertDateInputToISO(rescheduleTarget.date);
+
+      void applyQuickUpdates(task, { dueDate: iso });
+
+    },
+
+    [applyQuickUpdates, rescheduleTarget]
+
+  );
+
+
+
+  const handleAddNote = useCallback(
+
+    async (event: FormEvent<HTMLFormElement>) => {
+
+      event.preventDefault();
+
+      if (!focusTask || !token) {
+
+        return;
+
+      }
+
+      if (!focusTask.project?.id) {
+
+        setNoteFeedback("Esta tarefa precisa estar associada a um projeto.");
+
+        return;
+
+      }
+
+      const content = noteText.trim();
+
+      if (!content) {
+
+        setNoteFeedback("Escreva uma atualizaÃ§Ã£o antes de enviar.");
+
+        return;
+
+      }
+
+
+
+      setNoteState("saving");
+
+      setNoteFeedback(null);
+
+
+
+      const timestamp = new Date();
+
+      const formattedTimestamp = `${timestamp.toLocaleDateString("pt-BR")} ${timestamp.toLocaleTimeString("pt-BR")}`;
+
+      const baseDescription = focusDetails?.description?.trim();
+
+      const nextDescription = [baseDescription, `AtualizaÃ§Ã£o (${formattedTimestamp}): ${content}`]
+
+        .filter(Boolean)
+
+        .join("\n\n");
+
+
+
+      try {
+
+        await apiFetch(`/projects/${focusTask.project.id}/tasks/${focusTask.id}`, {
+
+          token,
+
+          method: "PUT",
+
+          body: { description: nextDescription }
+
+        });
+
+        detailsCacheRef.current.delete(focusTask.id);
+
+        setNoteText("");
+
+        await loadOverview(token, filters);
+
+        await fetchTaskDetails(focusTask, { force: true });
+
+      } catch (err) {
+
+        const message =
+
+          err instanceof ApiError ? err.message : "NÃ£o foi possÃ­vel registrar a atualizaÃ§Ã£o.";
+
+        setNoteFeedback(message);
+
+      } finally {
+
+        setNoteState("idle");
+
+      }
+
+    },
+
+    [focusTask, token, noteText, focusDetails, loadOverview, filters, fetchTaskDetails]
+
+  );
+
+
+
+  const handleFocusEditFieldChange = useCallback(
+
+    (field: keyof FocusEditForm, value: string | string[]) => {
+
+      setFocusEditForm((current) => {
+
+        if (!current) {
+
+          return current;
+
+        }
+
+        return {
+
+          ...current,
+
+          [field]: value
+
+        } as FocusEditForm;
+
+      });
+
+    },
+
+    []
+
+  );
+
+
+
+  const handleFocusEditSubmit = useCallback(async () => {
+
+    if (!focusTask) {
+
+      return;
+
+    }
+
+    if (!focusTask.project?.id) {
+
+      setFocusEditFeedback({
+
+        type: "error",
+
+        message: "Associe a tarefa a um projeto antes de editar."
+
+      });
+
+      return;
+
+    }
+
+    if (!token) {
+
+      setFocusEditFeedback({ type: "error", message: "Faca login para editar a tarefa." });
+
+      return;
+
+    }
+
+    if (!focusEditForm) {
+
+      setFocusEditFeedback({
+
+        type: "error",
+
+        message: "Ainda estamos carregando os dados da tarefa."
+
+      });
+
+      return;
+
+    }
+
+    if (!focusEditForm.title.trim()) {
+
+      setFocusEditFeedback({ type: "error", message: "Defina um titulo para a tarefa." });
+
+      return;
+
+    }
+
+
+
+    setFocusEditState("saving");
+
+    setFocusEditFeedback(null);
+
+
+
+    try {
+
+      await apiFetch(`/projects/${focusTask.project.id}/tasks/${focusTask.id}`, {
+
+        token,
+
+        method: "PUT",
+
+        body: {
+
+          title: focusEditForm.title.trim(),
+
+          status: focusEditForm.status,
+
+          assignees: focusEditForm.assignees,
+
+          dueDate: convertDateInputToISO(focusEditForm.dueDate)
+
+        }
+
+      });
+
+      detailsCacheRef.current.delete(focusTask.id);
+
+      await loadOverview(token, filters);
+
+      await fetchTaskDetails(focusTask, { force: true });
+
+      setFocusEditFeedback({ type: "success", message: "Tarefa atualizada!" });
+
+      focusEditVersionRef.current = null;
+
+    } catch (err) {
+
+      const message =
+
+        err instanceof ApiError ? err.message : "NÇœo conseguimos salvar as mudanï¿½ï¿½as.";
+
+      setFocusEditFeedback({ type: "error", message });
+
+    } finally {
+
+      setFocusEditState("idle");
+
+    }
+
+  }, [focusTask, token, focusEditForm, loadOverview, filters, fetchTaskDetails]);
+
+
+
+  const handleOpenCreateModal = useCallback(() => {
+
+    setCreateFeedback(null);
+
+    setCreateState("idle");
+
+    setCreateForm((prev) => {
+
+      if (prev.projectId || !overview?.filters.projects?.length) {
+
+        return { ...prev, title: "" };
+
+      }
+
+      return { ...prev, title: "", projectId: overview.filters.projects[0].id };
+
+    });
+
+    setCreateModalOpen(true);
+
+  }, [overview]);
+
+
+
+  const handleCloseCreateModal = useCallback(() => {
+
+    setCreateModalOpen(false);
+
+    setCreateFeedback(null);
+
+    setCreateState("idle");
+
+    setCreateForm((prev) => ({ ...prev, title: "", notes: "", dueDate: "", assignees: [] }));
+
+  }, []);
+
+
+
+  const handleCreateFieldChange = useCallback(
+
+    (field: keyof CreateTaskForm, value: string | string[]) => {
+
+      setCreateForm((prev) => ({
+
+        ...prev,
+
+        [field]: value
+
+      }));
+
+    },
+
+    []
+
+  );
+
+
+
+  const handleCreateSubmit = useCallback(
+
+    async (event: FormEvent<HTMLFormElement>) => {
+
+      event.preventDefault();
+
+      if (!token) {
+
+        setCreateFeedback("FaÃ§a login para criar tarefas.");
+
+        return;
+
+      }
+
+      if (!createForm.projectId) {
+
+        setCreateFeedback("Escolha um projeto para associar a tarefa.");
+
+        return;
+
+      }
+
+      if (!createForm.title.trim()) {
+
+        setCreateFeedback("DÃª um nome para a tarefa.");
+
+        return;
+
+      }
+
+
+
+      setCreateState("saving");
+
+      setCreateFeedback(null);
+
+
+
+      try {
+
+        await apiFetch(`/projects/${createForm.projectId}/tasks`, {
+
+          token,
+
+          method: "POST",
+
+          body: {
+
+            title: createForm.title.trim(),
+
+            status: createForm.status,
+
+            type: createForm.type,
+
+            dueDate: convertDateInputToISO(createForm.dueDate),
+
+            assignees: createForm.assignees,
+
+            description: createForm.notes.trim() ? createForm.notes.trim() : undefined
+
+          }
+
+        });
+
+        await loadOverview(token, filters);
+
+        setQuickFeedback("Tarefa criada com sucesso!");
+
+        handleCloseCreateModal();
+
+      } catch (err) {
+
+        const message = err instanceof ApiError ? err.message : "NÃ£o conseguimos criar a tarefa.";
+
+        setCreateFeedback(message);
+
+      } finally {
+
+        setCreateState("idle");
+
+      }
+
+    },
+
+    [token, createForm, loadOverview, filters, handleCloseCreateModal]
+
+  );
+
+
+
+  const handleBackToTop = useCallback(() => {
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+  }, []);
+
+
+
+  const isInitialLoading = fetchState === "loading" && !overview;
+
+  const isRefreshing = Boolean(overview) && fetchState === "loading";
+
+  const lastUpdated = overview?.metadata.generatedAt
+
+    ? FULL_DATE_FORMATTER.format(new Date(overview.metadata.generatedAt))
+
+    : null;
+
+
+
+  const appliedRange = overview?.metadata.appliedFilters.range ?? null;
+
+  const rangeLabel = appliedRange
+
+    ? `${FULL_DATE_FORMATTER.format(new Date(appliedRange.start))} Â· ${FULL_DATE_FORMATTER.format(
+
+        new Date(appliedRange.end)
+
+      )}`
+
+    : "Sem filtro de perÃ­odo";
+
+
+
+  const platformLabelMap = useMemo(() => {
+
+    if (!overview) {
+
+      return new Map<string, string>();
+
+    }
+
+    return new Map(overview.filters.platforms.map((platform) => [platform.value, platform.label]));
+
+  }, [overview]);
+
+
+
+  const availableProjects = useMemo(() => overview?.filters.projects ?? [], [overview]);
+
+  const availableAssignees = useMemo(() => overview?.filters.assignees ?? [], [overview]);
+
+  const clientDirectory = useMemo(() => {
+
+    if (!overview) {
+
+      return new Map<string, string>();
+
+    }
+
+    return new Map((overview.filters.clients ?? []).map((client) => [client.id, client.name]));
+
+  }, [overview]);
+
+
+
+  const projectOptions = useMemo(
+
+    () =>
+
+      availableProjects.map((project) => {
+
+        const clientName = project.clientId ? clientDirectory.get(project.clientId) : null;
+
+        return {
+
+          ...project,
+
+          displayName: clientName ? f"{project.name} — {clientName}" : project.name
+
+        };
+
+      }),
+
+    [availableProjects, clientDirectory]
+
+  );
+
+
+
+  useEffect(() => {
+
+    availableAssigneesRef.current = availableAssignees;
+
+  }, [availableAssignees]);
+
+
+
+
+  const canCreateTask = isAuthenticated && availableProjects.length > 0;
+
+
+
+  if (!isAuthenticated) {
+
+    return (
+
+      <div className="px-6 py-14">
+
+        <div className="mx-auto max-w-3xl rounded-3xl border border-white/15 bg-white/5 p-10 text-center text-offWhite shadow-2xl shadow-black/30">
+
+          <p className="text-xs uppercase tracking-[0.4em] text-offWhite/60">Tarefas</p>
+
+          <p className="mt-4 text-2xl font-semibold">Conecte-se para acessar o painel</p>
+
+          <p className="mt-3 text-base text-offWhite/80">
+
+            Este mÃ³dulo precisa do token de autenticaÃ§Ã£o para buscar as tarefas e filtros.
+
+          </p>
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+
+  const hasData = Boolean(overview && overview.items.length > 0);
+
+  const selectedTaskId = focusTask?.id ?? null;
+
+  const disableQuickActions = !token;
+
+
+
+  return (
+
+    <div className="px-6 py-8">
+
+      <div className="mx-auto max-w-[1200px] space-y-8">
+
+        <header className="rounded-[32px] border border-white/15 bg-gradient-to-r from-deepGreen to-deepGreen/80 px-8 py-10 text-offWhite shadow-2xl shadow-black/30">
+
+          <p className="text-xs uppercase tracking-[0.4em] text-offWhite/70">MÃ³dulo de tarefas</p>
+
+          <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+
+            <div>
+
+              <h1 className="text-3xl font-semibold leading-tight drop-shadow-lg">
+
+                O que precisa sair do forno hoje?
+
+              </h1>
+
+              <p className="mt-2 text-base text-offWhite/80">
+
+                Use os filtros para concentrar na operaÃ§Ã£o do dia e conclua direto daqui.
+
+              </p>
+
+            </div>
+
+            <div className="flex flex-col items-start gap-3 text-sm text-offWhite/80 lg:items-end">
+
+              <p>
+
+                Atualizado:{" "}
+
+                <span className="font-semibold text-offWhite">{lastUpdated ?? "sincronizando..."}</span>
+
+              </p>
+
+              <div className="flex flex-col items-start gap-2 lg:items-end">
+
+                <div className="flex flex-wrap gap-2">
+
+                  <button
+
+                    type="button"
+
+                    onClick={() => {
+
+                      if (token) {
+
+                        void loadOverview(token, filters);
+
+                      }
+
+                    }}
+
+                    className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-offWhite transition hover:bg-white/10"
+
+                  >
+
+                    Atualizar agora
+
+                  </button>
+
+                  <button
+
+                    type="button"
+
+                    onClick={handleOpenCreateModal}
+
+                    disabled={!canCreateTask}
+
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition ${
+
+                      canCreateTask
+
+                        ? "border border-offWhite bg-offWhite/10 text-offWhite hover:bg-offWhite/20"
+
+                        : "border border-offWhite/30 text-offWhite/60 opacity-60"
+
+                    }`}
+
+                  >
+
+                    Criar tarefa
+
+                  </button>
+
+                </div>
+
+                {isRefreshing ? (
+
+                  <span className="text-xs uppercase tracking-[0.3em] text-offWhite/60">
+
+                    Atualizando dados...
+
+                  </span>
+
+                ) : null}
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <p className="mt-4 text-sm text-offWhite/70">{rangeLabel}</p>
+
+        </header>
+
+
+
+        {error ? (
+
+          <div className="rounded-3xl border border-rose-200/80 bg-rose-50/90 p-6 text-rose-800 shadow-xl">
+
+            <p className="text-base font-semibold">NÃ£o conseguimos carregar as tarefas</p>
+
+            <p className="mt-2 text-sm text-rose-700">{error}</p>
+
+            <button
+
+              type="button"
+
+              onClick={() => {
+
+                if (token) {
+
+                  void loadOverview(token, filters);
+
+                }
+
+              }}
+
+              className="mt-4 inline-flex items-center justify-center rounded-full border border-rose-600 px-4 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-600 hover:text-white"
+
+            >
+
+              Tentar novamente
+
+            </button>
+
+          </div>
+
+        ) : null}
+
+
+
+        <TasksSummaryCards cards={overview?.cards ?? null} isLoading={isInitialLoading} />
+
+
+
+        <section className="rounded-[32px] border border-white/10 bg-white/80 p-6 shadow-2xl shadow-terracota/10">
+
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+            <div>
+
+              <p className="text-sm font-semibold text-deepGreen">Filtros principais</p>
+
+              <p className="text-sm text-deepGreen/70">ResponsÃ¡veis, clientes, plataforma e prazo.</p>
+
+            </div>
+
+            <button
+
+              type="button"
+
+              className="text-sm font-semibold text-terracota underline-offset-2 hover:underline"
+
+              onClick={() => {
+
+                setFilters(INITIAL_FILTERS);
+
+                setSearchInput("");
+
+              }}
+
+            >
+
+              Limpar filtros
+
+            </button>
+
+          </div>
+
+
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+            <FilterSelect
+
+              label="Status"
+
+              value={filters.status}
+
+              onChange={(value) => setFilters((prev) => ({ ...prev, status: value as TasksFiltersState["status"] }))}
+
+              options={[
+
+                { value: "all", label: "Todos" },
+
+                ...Object.entries(TASK_STATUS_LABELS).map(([value, label]) => ({
+
+                  value,
+
+                  label
+
+                }))
+
+              ]}
+
+            />
+
+            <FilterSelect
+
+              label="Tipo"
+
+              value={filters.type}
+
+              onChange={(value) => setFilters((prev) => ({ ...prev, type: value as TasksFiltersState["type"] }))}
+
+              options={[
+
+                { value: "all", label: "Todos" },
+
+                { value: "optimization", label: "OtimizaÃ§Ã£o" },
+
+                { value: "report", label: "RelatÃ³rio" },
+
+                { value: "creative", label: "Criativo" },
+
+                { value: "meeting", label: "ReuniÃ£o" },
+
+                { value: "other", label: "Outros" }
+
+              ]}
+
+            />
+
+            <FilterSelect
+
+              label="ResponsÃ¡vel"
+
+              value={filters.assigneeId}
+
+              onChange={(value) => setFilters((prev) => ({ ...prev, assigneeId: value }))}
+
+              options={[
+
+                { value: "all", label: "Todos" },
+
+                ...(overview?.filters.assignees ?? []).map((member) => ({
+
+                  value: member.id,
+
+                  label: member.name
+
+                }))
+
+              ]}
+
+            />
+
+            <FilterSelect
+
+              label="Cliente"
+
+              value={filters.clientId}
+
+              onChange={(value) => setFilters((prev) => ({ ...prev, clientId: value }))}
+
+              options={[
+
+                { value: "all", label: "Todos" },
+
+                ...(overview?.filters.clients ?? []).map((client) => ({
+
+                  value: client.id,
+
+                  label: client.name
+
+                }))
+
+              ]}
+
+            />
+
+            <FilterSelect
+
+              label="Projeto"
+
+              value={filters.projectId}
+
+              onChange={(value) => setFilters((prev) => ({ ...prev, projectId: value }))}
+
+              options={[
+
+                { value: "all", label: "Todos" },
+
+                ...(overview?.filters.projects ?? []).map((project) => ({
+
+                  value: project.id,
+
+                  label: project.name
+
+                }))
+
+              ]}
+
+            />
+
+            <FilterSelect
+
+              label="Plataforma"
+
+              value={filters.platform}
+
+              onChange={(value) => setFilters((prev) => ({ ...prev, platform: value }))}
+
+              options={[
+
+                { value: "all", label: "Todas" },
+
+                ...(overview?.filters.platforms ?? []).map((platform) => ({
+
+                  value: platform.value,
+
+                  label: platform.label
+
+                }))
+
+              ]}
+
+            />
+
+          </div>
+
+
+
+          <div className="mt-6 flex flex-wrap gap-2">
+
+            {PERIOD_PRESETS.map((preset) => (
+
+              <button
+
+                key={preset.value}
+
+                type="button"
+
+                onClick={() =>
+
+                  setFilters((prev) => ({
+
+                    ...prev,
+
+                    period: preset.value,
+
+                    from: "",
+
+                    to: ""
+
+                  }))
+
+                }
+
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+
+                  filters.period === preset.value
+
+                    ? "border-deepGreen bg-deepGreen text-white"
+
+                    : "border-deepGreen/20 bg-white text-deepGreen hover:border-deepGreen/40"
+
+                }`}
+
+              >
+
+                {preset.label}
+
+              </button>
+
+            ))}
+
+          </div>
+
+
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+            <div>
+
+              <label
+
+                htmlFor={DATE_FROM_INPUT_ID}
+
+                className="text-xs font-semibold uppercase tracking-[0.3em] text-deepGreen/70"
+
+              >
+
+                De
+
+              </label>
+
+              <input
+
+                id={DATE_FROM_INPUT_ID}
+
+                type="date"
+
+                value={filters.from}
+
+                onChange={(event) =>
+
+                  setFilters((prev) => {
+
+                    const next = { ...prev, from: event.target.value };
+
+                    if (next.from && next.to) {
+
+                      next.period = "custom";
+
+                    } else if (prev.period === "custom") {
+
+                      next.period = "none";
+
+                    }
+
+                    return next;
+
+                  })
+
+                }
+
+                className="mt-2 w-full rounded-2xl border border-deepGreen/20 bg-white px-4 py-2 text-deepGreen outline-none focus:border-deepGreen"
+
+              />
+
+            </div>
+
+            <div>
+
+              <label
+
+                htmlFor={DATE_TO_INPUT_ID}
+
+                className="text-xs font-semibold uppercase tracking-[0.3em] text-deepGreen/70"
+
+              >
+
+                AtÃ©
+
+              </label>
+
+              <input
+
+                id={DATE_TO_INPUT_ID}
+
+                type="date"
+
+                value={filters.to}
+
+                onChange={(event) =>
+
+                  setFilters((prev) => {
+
+                    const next = { ...prev, to: event.target.value };
+
+                    if (next.from && next.to) {
+
+                      next.period = "custom";
+
+                    } else if (prev.period === "custom") {
+
+                      next.period = "none";
+
+                    }
+
+                    return next;
+
+                  })
+
+                }
+
+                className="mt-2 w-full rounded-2xl border border-deepGreen/20 bg-white px-4 py-2 text-deepGreen outline-none focus:border-deepGreen"
+
+              />
+
+            </div>
+
+            <div>
+
+              <label
+
+                htmlFor={SEARCH_INPUT_ID}
+
+                className="text-xs font-semibold uppercase tracking-[0.3em] text-deepGreen/70"
+
+              >
+
+                Buscar
+
+              </label>
+
+              <input
+
+                id={SEARCH_INPUT_ID}
+
+                type="search"
+
+                placeholder="TÃ­tulo ou palavra-chave"
+
+                value={searchInput}
+
+                onChange={(event) => setSearchInput(event.target.value)}
+
+                className="mt-2 w-full rounded-2xl border border-deepGreen/20 bg-white px-4 py-2 text-deepGreen outline-none focus:border-deepGreen"
+
+              />
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+
+        <section className="rounded-[32px] border border-white/10 bg-white/80 p-6 shadow-2xl shadow-black/5">
+
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+
+            <div>
+
+              <p className="text-sm font-semibold text-deepGreen">Status geral</p>
+
+              <p className="text-sm text-deepGreen/70">
+
+                {overview
+
+                  ? isRefreshing
+
+                    ? "Atualizando..."
+
+                    : `${overview.metadata.total} tarefas encontradas`
+
+                  : isInitialLoading
+
+                    ? "Sincronizando..."
+
+                    : "Ainda sem dados"}
+
+              </p>
+
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+
+              {overview
+
+                ? TASK_STATUS_ORDER.map((status) => (
+
+                    <span
+
+                      key={status}
+
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${TASK_STATUS_STYLES[status]}`}
+
+                    >
+
+                      {TASK_STATUS_LABELS[status]} Â· {overview.totals.byStatus[status] ?? 0}
+
+                    </span>
+
+                  ))
+
+                : null}
+
+            </div>
+
+          </div>
+
+
+
+          <div className="mt-6">
+
+            {quickFeedback ? (
+
+              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-2 text-sm text-amber-900">
+
+                {quickFeedback}
+
+              </div>
+
+            ) : null}
+
+            <TasksTable
+
+              items={overview?.items ?? []}
+
+              isLoading={isInitialLoading}
+
+              platformLabels={platformLabelMap}
+
+              onSelect={handleSelectTask}
+
+              onFocusRequest={handleSelectTask}
+
+              selectedTaskId={selectedTaskId}
+
+              onMarkDone={handleMarkDone}
+
+              onMarkReview={handleMarkReview}
+
+              onRescheduleOpen={handleRescheduleOpen}
+
+              onRescheduleChange={handleRescheduleDateChange}
+
+              onRescheduleSubmit={handleRescheduleSubmit}
+
+              onRescheduleCancel={handleRescheduleCancel}
+
+              rescheduleState={rescheduleTarget}
+
+              mutationTaskId={mutation?.taskId ?? null}
+
+              disableActions={disableQuickActions}
+
+              assigneeOverrides={assigneeOverrides}
+
+            />
+
+            {!hasData && overview && (
+
+              <p className="mt-4 text-center text-sm text-deepGreen/60">
+
+                Nenhuma tarefa encontrada para os filtros atuais. Reveja filtros ou tente outro perÃ­odo.
+
+              </p>
+
+            )}
+
+          </div>
+
+        </section>
+
+      </div>
+
+      <TaskFocusPanel
+
+        task={focusTask}
+
+        details={focusDetails}
+
+        state={focusState}
+
+        error={focusError}
+
+        onClose={handleCloseFocus}
+
+        onMarkDone={focusTask ? () => handleMarkDone(focusTask) : undefined}
+
+        onMarkReview={focusTask ? () => handleMarkReview(focusTask) : undefined}
+
+        onRescheduleOpen={focusTask ? () => handleRescheduleOpen(focusTask) : undefined}
+
+        onRescheduleChange={handleRescheduleDateChange}
+
+        onRescheduleSubmit={focusTask ? () => handleRescheduleSubmit(focusTask) : undefined}
+
+        onRescheduleCancel={handleRescheduleCancel}
+
+        rescheduleState={rescheduleTarget}
+
+        mutationTaskId={mutation?.taskId ?? null}
+
+        noteText={noteText}
+
+        onNoteChange={setNoteText}
+
+        noteState={noteState}
+
+        noteFeedback={noteFeedback}
+
+        onNoteSubmit={handleAddNote}
+
+        assignees={availableAssignees}
+
+        editForm={focusEditForm}
+
+        onEditChange={handleFocusEditFieldChange}
+
+        onEditSubmit={handleFocusEditSubmit}
+
+        editState={focusEditState}
+
+        editFeedback={focusEditFeedback}
+
+        disableActions={disableQuickActions}
+
+      />
+
+      <CreateTaskModal
+
+        open={createModalOpen}
+
+        form={createForm}
+
+        projects={availableProjects}
+
+        assignees={availableAssignees}
+
+        state={createState}
+
+        feedback={createFeedback}
+
+        onClose={handleCloseCreateModal}
+
+        onChange={handleCreateFieldChange}
+
+        onSubmit={handleCreateSubmit}
+
+      />
+
+      {showBackToTop ? (
+
+        <button
+
+          type="button"
+
+          onClick={handleBackToTop}
+
+          className="fixed bottom-6 right-6 z-40 rounded-full bg-deepGreen px-4 py-2 text-sm font-semibold text-white shadow-xl shadow-deepGreen/30 transition hover:bg-deepGreen/90"
+
+        >
+
+          Voltar ao topo
+
+        </button>
+
+      ) : null}
+
+    </div>
+
+  );
+
+}
+
+
+
+function buildQueryFromFilters(filters: TasksFiltersState): Record<string, string> {
+
+  const query: Record<string, string> = {};
+
+  if (filters.status !== "all") {
+
+    query.status = filters.status;
+
+  }
+
+  if (filters.type !== "all") {
+
+    query.type = filters.type;
+
+  }
+
+  if (filters.assigneeId !== "all") {
+
+    query.assigneeId = filters.assigneeId;
+
+  }
+
+  if (filters.clientId !== "all") {
+
+    query.clientId = filters.clientId;
+
+  }
+
+  if (filters.projectId !== "all") {
+
+    query.projectId = filters.projectId;
+
+  }
+
+  if (filters.platform !== "all") {
+
+    query.platform = filters.platform;
+
+  }
+
+  if (filters.period !== "none") {
+
+    query.period = filters.period;
+
+  }
+
+  if (filters.from && filters.to) {
+
+    query.from = filters.from;
+
+    query.to = filters.to;
+
+  }
+
+  if (filters.search) {
+
+    query.search = filters.search;
+
+  }
+
+  return query;
+
+}
+
+
+
+function TasksSummaryCards({
+
+  cards,
+
+  isLoading
+
+}: {
+
+  cards: TaskOverviewResponse["cards"] | null;
+
+  isLoading: boolean;
+
+}): JSX.Element {
+
+  const cardEntries: Array<{ key: keyof TaskOverviewResponse["cards"]; label: string }> = [
+
+    { key: "today", label: "Hoje" },
+
+    { key: "week", label: "Esta semana" },
+
+    { key: "overdue", label: "Atrasadas" }
+
+  ];
+
+
+
+  return (
+
+    <section className="grid gap-4 md:grid-cols-3">
+
+      {cardEntries.map(({ key, label }) => {
+
+        const card = cards?.[key] ?? null;
+
+        return (
+
+          <article
+
+            key={key}
+
+            className="rounded-[28px] border border-white/10 bg-white/90 p-6 shadow-2xl shadow-black/10"
+
+          >
+
+            <p className="text-xs uppercase tracking-[0.4em] text-deepGreen/60">{label}</p>
+
+            <p className="mt-4 text-4xl font-semibold text-deepGreen">
+
+              {isLoading && !card ? "Â·Â·Â·" : card?.total ?? 0}
+
+            </p>
+
+            {card ? <CardHighlight highlight={card.highlight} /> : null}
+
+          </article>
+
+        );
+
+      })}
+
+    </section>
+
+  );
+
+}
+
+
+
+function CardHighlight({ highlight }: { highlight: TaskOverviewCard["highlight"] }): JSX.Element | null {
+
+  if (!highlight) {
+
+    return (
+
+      <p className="mt-4 text-sm text-deepGreen/70">Nenhuma tarefa nesta lista por enquanto.</p>
+
+    );
+
+  }
+
+  return (
+
+    <div className="mt-4 space-y-1 rounded-2xl bg-deepGreen/5 p-4 text-sm text-deepGreen">
+
+      <p className="font-semibold">{highlight.title}</p>
+
+      <p className="text-xs text-deepGreen/80">
+
+        {highlight.clientName ?? "Sem cliente"} Â·{" "}
+
+        {highlight.dueDate ? DATE_FORMATTER.format(new Date(highlight.dueDate)) : "Sem prazo"}
+
+      </p>
+
+      {highlight.assignees.length > 0 ? (
+
+        <p className="text-xs text-deepGreen/80">
+
+          Com{" "}
+
+          {highlight.assignees
+
+            .map((assignee) => assignee.name)
+
+            .slice(0, 2)
+
+            .join(" e ")}
+
+          {highlight.assignees.length > 2 ? ` +${highlight.assignees.length - 2}` : ""}
+
+        </p>
+
+      ) : (
+
+        <p className="text-xs text-deepGreen/60">Sem responsÃ¡vel definido</p>
+
+      )}
+
+    </div>
+
+  );
+
+}
+
+
+
+function FilterSelect({
+
+  label,
+
+  value,
+
+  onChange,
+
+  options
+
+}: {
+
+  label: string;
+
+  value: string;
+
+  onChange: (value: string) => void;
+
+  options: Array<{ value: string; label: string }>;
+
+}): JSX.Element {
+
+  return (
+
+    <label className="flex flex-col gap-2 text-sm font-medium text-deepGreen">
+
+      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-deepGreen/70">{label}</span>
+
+      <select
+
+        className="rounded-2xl border border-deepGreen/20 bg-white px-4 py-2 text-deepGreen outline-none focus:border-deepGreen"
+
+        value={value}
+
+        onChange={(event) => onChange(event.target.value)}
+
+      >
+
+        {options.map((option) => (
+
+          <option key={option.value} value={option.value}>
+
+            {option.label}
+
+          </option>
+
+        ))}
+
+      </select>
+
+    </label>
+
+  );
+
+}
+
+
+
+type RescheduleState = { taskId: string; date: string } | null;
+
+
+
+function TasksTable({
+
+  items,
+
+  isLoading,
+
+  platformLabels,
+
+  onSelect,
+
+  onFocusRequest,
+
+  selectedTaskId,
+
+  onMarkDone,
+
+  onMarkReview,
+
+  onRescheduleOpen,
+
+  onRescheduleChange,
+
+  onRescheduleSubmit,
+
+  onRescheduleCancel,
+
+  rescheduleState,
+
+  mutationTaskId,
+
+  disableActions,
+
+  assigneeOverrides
+
+}: {
+
+  items: TaskOverviewItem[];
+
+  isLoading: boolean;
+
+  platformLabels: Map<string, string>;
+
+  onSelect: (task: TaskOverviewItem) => void;
+
+  onFocusRequest: (task: TaskOverviewItem) => void;
+
+  selectedTaskId: string | null;
+
+  onMarkDone: (task: TaskOverviewItem) => void;
+
+  onMarkReview: (task: TaskOverviewItem) => void;
+
+  onRescheduleOpen: (task: TaskOverviewItem) => void;
+
+  onRescheduleChange: (value: string) => void;
+
+  onRescheduleSubmit: (task: TaskOverviewItem) => void;
+
+  onRescheduleCancel: () => void;
+
+  rescheduleState: RescheduleState;
+
+  mutationTaskId: string | null;
+
+  disableActions: boolean;
+
+  assigneeOverrides: Record<string, TaskOverviewAssignee[]>;
+
+}): JSX.Element {
+
+  if (isLoading) {
+
+    return (
+
+      <div className="space-y-3">
+
+        {Array.from({ length: 4 }).map((_, index) => (
+
+          <div
+
+            key={index}
+
+            className="h-20 animate-pulse rounded-2xl bg-slate-100/60"
+
+          />
+
+        ))}
+
+      </div>
+
+    );
+
+  }
+
+
+
+  return (
+
+    <div className="relative overflow-x-auto">
+
+      <table className="min-w-full divide-y divide-slate-200 text-left">
+
+        <thead className="sticky top-0 z-10 bg-white text-xs uppercase tracking-wide text-slate-500 shadow-sm">
+
+          <tr>
+
+            <th className="px-4 py-3">Tarefa</th>
+
+            <th className="px-4 py-3">Cliente</th>
+
+            <th className="px-4 py-3">ResponsÃ¡vel</th>
+
+            <th className="px-4 py-3">Plataforma</th>
+
+            <th className="px-4 py-3">Prazo</th>
+
+            <th className="px-4 py-3">Status</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+
+          {items.map((task) => {
+
+            const isSelected = selectedTaskId === task.id;
+
+            const isMutating = mutationTaskId === task.id;
+
+            const displayAssignees = assigneeOverrides[task.id] ?? task.assignees;
+
+            return (
+
+              <tr
+
+                key={task.id}
+
+                className={`cursor-pointer bg-white/50 transition hover:bg-emerald-50/40 ${
+
+                  isSelected ? "ring-2 ring-terracota/40" : ""
+
+                } ${isMutating ? "opacity-70" : ""}`}
+
+                onClick={() => onSelect(task)}
+
+                onKeyDown={(event) => {
+
+                  if (event.key === "Enter" || event.key === " ") {
+
+                    event.preventDefault();
+
+                    onSelect(task);
+
+                  }
+
+                }}
+
+                role="button"
+
+                tabIndex={0}
+
+                aria-pressed={isSelected}
+
+              >
+
+              <td className="px-4 py-4 align-top">
+
+                <p className="font-semibold text-slate-900">{task.title}</p>
+
+                <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+
+                  <span className="rounded-full border px-2 py-0.5">
+
+                    {task.project?.name ?? "Sem projeto"}
+
+                  </span>
+
+                  <ChecklistBadge checklist={task.checklist} />
+
+                </div>
+
+                <QuickActionBar
+
+                  task={task}
+
+                  onMarkDone={() => onMarkDone(task)}
+
+                  onMarkReview={() => onMarkReview(task)}
+
+                  onRescheduleOpen={() => onRescheduleOpen(task)}
+
+                  onRescheduleChange={onRescheduleChange}
+
+                  onRescheduleSubmit={() => onRescheduleSubmit(task)}
+
+                  onRescheduleCancel={onRescheduleCancel}
+
+                  rescheduleState={rescheduleState}
+
+                  isSaving={isMutating}
+
+                  disabled={disableActions}
+
+                  onFocus={() => onFocusRequest(task)}
+
+                />
+
+              </td>
+
+              <td className="px-4 py-4 align-top">
+
+                <p className="font-medium">{task.client?.name ?? "NÃ£o informado"}</p>
+
+                <p className="text-xs text-slate-500">
+
+                  {task.client?.segment ?? "Sem segmento"}
+
+                </p>
+
+              </td>
+
+              <td className="px-4 py-4 align-top">
+
+                <AssigneeStack assignees={displayAssignees} />
+
+              </td>
+
+              <td className="px-4 py-4 align-top">
+
+                <div className="flex flex-wrap gap-2">
+
+                  {task.platforms.map((platform) => (
+
+                    <span
+
+                      key={`${task.id}-${platform}`}
+
+                      className={`rounded-full border px-3 py-0.5 text-xs font-semibold ${
+
+                        PLATFORM_TONES[platform] ?? PLATFORM_TONES.other
+
+                      }`}
+
+                    >
+
+                      {platformLabels.get(platform) ?? platform}
+
+                    </span>
+
+                  ))}
+
+                </div>
+
+              </td>
+
+              <td className="px-4 py-4 align-top">
+
+                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${PRIORITY_STYLES[task.priority]}`}>
+
+                  {PRIORITY_LABELS[task.priority]}
+
+                </span>
+
+                <p className="mt-2 text-xs text-slate-500">
+
+                  {task.dueDate ? FULL_DATE_FORMATTER.format(new Date(task.dueDate)) : "Sem prazo"}
+
+                </p>
+
+              </td>
+
+              <td className="px-4 py-4 align-top">
+
+                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${TASK_STATUS_STYLES[task.status]}`}>
+
+                  {TASK_STATUS_LABELS[task.status]}
+
+                </span>
+
+              </td>
+
+              </tr>
+
+            );
+
+          })}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  );
+
+}
+
+
+
+function ChecklistBadge({ checklist }: { checklist: TaskOverviewItem["checklist"] }): JSX.Element {
+
+  if (!checklist.total) {
+
+    return <span className="rounded-full border px-2 py-0.5">Checklist vazio</span>;
+
+  }
+
+  return (
+
+    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-700">
+
+      {checklist.done}/{checklist.total} passos
+
+    </span>
+
+  );
+
+}
+
+
+
+type QuickActionBarProps = {
+
+  task: TaskOverviewItem;
+
+  onMarkDone: () => void;
+
+  onMarkReview: () => void;
+
+  onRescheduleOpen: () => void;
+
+  onRescheduleChange: (value: string) => void;
+
+  onRescheduleSubmit: () => void;
+
+  onRescheduleCancel: () => void;
+
+  rescheduleState: RescheduleState;
+
+  isSaving: boolean;
+
+  disabled: boolean;
+
+  onFocus?: () => void;
+
+};
+
+
+
+function QuickActionBar({
+
+  task,
+
+  onMarkDone,
+
+  onMarkReview,
+
+  onRescheduleOpen,
+
+  onRescheduleChange,
+
+  onRescheduleSubmit,
+
+  onRescheduleCancel,
+
+  rescheduleState,
+
+  isSaving,
+
+  disabled,
+
+  onFocus
+
+}: QuickActionBarProps): JSX.Element {
+
+  const isRescheduling = rescheduleState?.taskId === task.id;
+
+
+
+  const handleClick =
+
+    (action: () => void) =>
+
+    (event: MouseEvent<HTMLButtonElement>) => {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      if (disabled || isSaving) {
+
+        return;
+
+      }
+
+      action();
+
+    };
+
+
+
+  return (
+
+    <div className="mt-3 space-y-2">
+
+      <div className="flex flex-wrap gap-2 text-xs font-semibold">
+
+        <button
+
+          type="button"
+
+          onClick={handleClick(onMarkDone)}
+
+          disabled={disabled || isSaving}
+
+          className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+
+        >
+
+          Concluir
+
+        </button>
+
+        <button
+
+          type="button"
+
+          onClick={handleClick(onMarkReview)}
+
+          disabled={disabled || isSaving}
+
+          className="inline-flex items-center rounded-full border border-amber-400 px-3 py-1 text-amber-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+
+        >
+
+          Precisa revisÃ£o
+
+        </button>
+
+        {isRescheduling ? null : (
+
+          <button
+
+            type="button"
+
+            onClick={handleClick(onRescheduleOpen)}
+
+            disabled={disabled || isSaving}
+
+            className="inline-flex items-center rounded-full border border-deepGreen/30 px-3 py-1 text-deepGreen transition hover:border-deepGreen/60 disabled:cursor-not-allowed disabled:opacity-60"
+
+          >
+
+            Reagendar
+
+          </button>
+
+        )}
+
+        {onFocus ? (
+
+          <button
+
+            type="button"
+
+            onClick={handleClick(onFocus)}
+
+            disabled={disabled || isSaving}
+
+            className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-slate-700 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+
+          >
+
+            Modo Focus
+
+          </button>
+
+        ) : null}
+
+      </div>
+
+
+
+      {isRescheduling ? (
+
+        <form
+
+          className="flex flex-wrap items-center gap-2 text-xs"
+
+          onSubmit={(event) => {
+
+            event.preventDefault();
+
+            if (!disabled && !isSaving) {
+
+              onRescheduleSubmit();
+
+            }
+
+          }}
+
+        >
+
+          <input
+
+            type="date"
+
+            value={rescheduleState?.date ?? ""}
+
+            onChange={(event) => onRescheduleChange(event.target.value)}
+
+            onClick={(event) => event.stopPropagation()}
+
+            className="rounded-full border border-deepGreen/30 px-3 py-1 text-deepGreen outline-none focus:border-deepGreen"
+
+            disabled={disabled || isSaving}
+
+          />
+
+          <button
+
+            type="submit"
+
+            onClick={(event) => event.stopPropagation()}
+
+            className="rounded-full bg-deepGreen px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-60"
+
+            disabled={disabled || isSaving}
+
+          >
+
+            Salvar
+
+          </button>
+
+          <button
+
+            type="button"
+
+            onClick={(event) => {
+
+              event.preventDefault();
+
+              event.stopPropagation();
+
+              onRescheduleCancel();
+
+            }}
+
+            className="rounded-full border border-slate-300 px-3 py-1 text-slate-600"
+
+          >
+
+            Cancelar
+
+          </button>
+
+        </form>
+
+      ) : null}
+
+    </div>
+
+  );
+
+}
+
+
+
+type TaskFocusPanelProps = {
+
+  task: TaskOverviewItem | null;
+
+  details: TaskEntity | null;
+
+  state: "idle" | "loading" | "loaded" | "error";
+
+  error: string | null;
+
+  onClose: () => void;
+
+  onMarkDone?: () => void;
+
+  onMarkReview?: () => void;
+
+  onRescheduleOpen?: () => void;
+
+  onRescheduleChange: (value: string) => void;
+
+  onRescheduleSubmit?: () => void;
+
+  onRescheduleCancel: () => void;
+
+  rescheduleState: RescheduleState;
+
+  mutationTaskId: string | null;
+
+  noteText: string;
+
+  onNoteChange: (value: string) => void;
+
+  noteState: "idle" | "saving";
+
+  noteFeedback: string | null;
+
+  onNoteSubmit: (event: FormEvent<HTMLFormElement>) => void;
+
+  assignees: TaskOverviewAssignee[];
+
+  editForm: FocusEditForm | null;
+
+  onEditChange: (field: keyof FocusEditForm, value: string | string[]) => void;
+
+  onEditSubmit: () => void;
+
+  editState: "idle" | "saving";
+
+  editFeedback: { type: "success" | "error"; message: string } | null;
+
+  disableActions: boolean;
+
+};
+
+
+
+function TaskFocusPanel({
+
+  task,
+
+  details,
+
+  state,
+
+  error,
+
+  onClose,
+
+  onMarkDone,
+
+  onMarkReview,
+
+  onRescheduleOpen,
+
+  onRescheduleChange,
+
+  onRescheduleSubmit,
+
+  onRescheduleCancel,
+
+  rescheduleState,
+
+  mutationTaskId,
+
+  noteText,
+
+  onNoteChange,
+
+  noteState,
+
+  noteFeedback,
+
+  onNoteSubmit,
+
+  assignees,
+
+  editForm,
+
+  onEditChange,
+
+  onEditSubmit,
+
+  editState,
+
+  editFeedback,
+
+  disableActions
+
+}: TaskFocusPanelProps): JSX.Element | null {
+
+  const assigneeOptionsList = useMemo(() => {
+
+    if (!editForm) {
+
+      return assignees;
+
+    }
+
+    const missingIds = editForm.assignees.filter(
+
+      (assigneeId) => !assignees.some((member) => member.id === assigneeId)
+
+    );
+
+    if (missingIds.length === 0) {
+
+      return assignees;
+
+    }
+
+    const fallback = missingIds.map((id) => ({
+
+      id,
+
+      name: "Responsavel nao listado",
+
+      color: null,
+
+      role: null
+
+    }));
+
+    return [...assignees, ...fallback];
+
+  }, [assignees, editForm]);
+
+  const isEditingDisabled = disableActions || editState === "saving";
+
+
+
+  if (!task) {
+
+    return null;
+
+  }
+
+
+
+  const isMutating = mutationTaskId === task.id;
+
+  const dueLabel = task.dueDate ? FULL_DATE_FORMATTER.format(new Date(task.dueDate)) : "Sem prazo";
+
+  const description = details?.description ?? "Nenhum brief cadastrado para esta tarefa.";
+
+  const timeline = details?.activityLog ?? [];
+
+  const checklistItems = details?.checklist ?? [];
+
+  const showReschedule = Boolean(onRescheduleOpen && onRescheduleSubmit);
+
+
+
+  return (
+
+    <aside className="fixed inset-y-0 right-0 z-40 w-full max-w-md border-l border-slate-200 bg-white shadow-2xl">
+
+      <div className="flex h-full flex-col overflow-hidden">
+
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+
+          <div>
+
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Modo Focus</p>
+
+            <h2 className="text-lg font-semibold text-slate-900">{task.title}</h2>
+
+          </div>
+
+          <button
+
+            type="button"
+
+            onClick={onClose}
+
+            className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+
+          >
+
+            Fechar
+
+          </button>
+
+        </div>
+
+
+
+        <div className="flex-1 overflow-y-auto space-y-6 px-6 py-6">
+
+          <div className="space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-700">
+
+            <div className="flex flex-wrap items-center gap-2">
+
+              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${TASK_STATUS_STYLES[task.status]}`}>
+
+                {TASK_STATUS_LABELS[task.status]}
+
+              </span>
+
+              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${PRIORITY_STYLES[task.priority]}`}>
+
+                {PRIORITY_LABELS[task.priority]}
+
+              </span>
+
+            </div>
+
+            <p>
+
+              Cliente: <span className="font-semibold">{task.client?.name ?? "NÃ£o informado"}</span>
+
+            </p>
+
+            <p>
+
+              Projeto: <span className="font-semibold">{task.project?.name ?? "Sem projeto"}</span>
+
+            </p>
+
+            <p>Prazo: {dueLabel}</p>
+
+          </div>
+
+
+
+          <div className="space-y-3">
+
+            <h3 className="text-sm font-semibold text-slate-900">Editar tarefa</h3>
+
+            {editForm ? (
+
+              <form
+
+                className="space-y-3 rounded-3xl border border-slate-200 bg-white p-4"
+
+                onSubmit={(event) => {
+
+                  event.preventDefault();
+
+                  if (!isEditingDisabled) {
+
+                    onEditSubmit();
+
+                  }
+
+                }}
+
+              >
+
+                <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+
+                  Titulo
+
+                  <input
+
+                    type="text"
+
+                    value={editForm.title}
+
+                    onChange={(event) => onEditChange("title", event.target.value)}
+
+                    className="rounded-2xl border border-slate-300 px-3 py-2 font-normal text-slate-900 outline-none focus:border-deepGreen"
+
+                    disabled={isEditingDisabled}
+
+                  />
+
+                </label>
+
+
+
+                <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+
+                  Responsaveis
+
+                  {assigneeOptionsList.length > 0 ? (
+
+                    <select
+
+                      multiple
+
+                      value={editForm.assignees}
+
+                      onChange={(event) =>
+
+                        onEditChange(
+
+                          "assignees",
+
+                          Array.from(event.target.selectedOptions).map((option) => option.value)
+
+                        )
+
+                      }
+
+                      className="min-h-[120px] rounded-2xl border border-slate-300 px-3 py-2 font-normal text-slate-900 outline-none focus:border-deepGreen"
+
+                      disabled={isEditingDisabled}
+
+                    >
+
+                      {assigneeOptionsList.map((member) => (
+
+                        <option key={member.id} value={member.id}>
+
+                          {member.name}
+
+                        </option>
+
+                      ))}
+
+                    </select>
+
+                  ) : (
+
+                    <p className="text-xs font-normal text-slate-500">
+
+                      Sem membros ativos. Cadastre responsaveis nos filtros para liberar esta edicao.
+
+                    </p>
+
+                  )}
+
+                  <span className="text-xs font-normal text-slate-500">
+
+                    Use Ctrl/Cmd para selecionar mais de um responsavel.
+
+                  </span>
+
+                </label>
+
+
+
+                <div className="grid gap-3 md:grid-cols-2">
+
+                  <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+
+                    Status
+
+                    <select
+
+                      value={editForm.status}
+
+                      onChange={(event) => onEditChange("status", event.target.value)}
+
+                      className="rounded-2xl border border-slate-300 px-3 py-2 font-normal text-slate-900 outline-none focus:border-deepGreen"
+
+                      disabled={isEditingDisabled}
+
+                    >
+
+                      {TASK_STATUS_ORDER.map((status) => (
+
+                        <option key={status} value={status}>
+
+                          {TASK_STATUS_LABELS[status]}
+
+                        </option>
+
+                      ))}
+
+                    </select>
+
+                  </label>
+
+                  <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+
+                    Prazo
+
+                    <input
+
+                      type="date"
+
+                      value={editForm.dueDate}
+
+                      onChange={(event) => onEditChange("dueDate", event.target.value)}
+
+                      className="rounded-2xl border border-slate-300 px-3 py-2 font-normal text-slate-900 outline-none focus:border-deepGreen"
+
+                      disabled={isEditingDisabled}
+
+                    />
+
+                  </label>
+
+                </div>
+
+
+
+                {editFeedback ? (
+
+                  <p
+
+                    className={`text-xs ${
+
+                      editFeedback.type === "success" ? "text-emerald-600" : "text-rose-600"
+
+                    }`}
+
+                  >
+
+                    {editFeedback.message}
+
+                  </p>
+
+                ) : null}
+
+
+
+                <button
+
+                  type="submit"
+
+                  disabled={isEditingDisabled}
+
+                  className="w-full rounded-full bg-deepGreen px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+
+                >
+
+                  {editState === "saving" ? "Salvando..." : "Salvar mudancas"}
+
+                </button>
+
+              </form>
+
+            ) : (
+
+              <p className="text-sm text-slate-500">Carregando formulario de edicao...</p>
+
+            )}
+
+          </div>
+
+
+
+          <div className="space-y-3">
+
+            <h3 className="text-sm font-semibold text-slate-900">AÃ§Ãµes rÃ¡pidas</h3>
+
+            <QuickActionBar
+
+              task={task}
+
+              onMarkDone={onMarkDone ?? (() => {})}
+
+              onMarkReview={onMarkReview ?? (() => {})}
+
+              onRescheduleOpen={
+
+                showReschedule && onRescheduleOpen ? onRescheduleOpen : () => {}
+
+              }
+
+              onRescheduleChange={onRescheduleChange}
+
+              onRescheduleSubmit={
+
+                showReschedule && onRescheduleSubmit ? onRescheduleSubmit : () => {}
+
+              }
+
+              onRescheduleCancel={onRescheduleCancel}
+
+              rescheduleState={rescheduleState}
+
+              isSaving={isMutating}
+
+              disabled={disableActions}
+
+            />
+
+          </div>
+
+
+
+          <div className="space-y-2">
+
+            <h3 className="text-sm font-semibold text-slate-900">Brief</h3>
+
+            {state === "loading" ? (
+
+              <p className="text-sm text-slate-500">Carregando detalhes...</p>
+
+            ) : (
+
+              <p className="whitespace-pre-line rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+
+                {description}
+
+              </p>
+
+            )}
+
+          </div>
+
+
+
+          <div className="space-y-3">
+
+            <h3 className="text-sm font-semibold text-slate-900">Checklist</h3>
+
+            {checklistItems.length > 0 ? (
+
+              <ul className="space-y-2">
+
+                {checklistItems.map((item) => (
+
+                  <li key={item.id} className="flex items-center gap-2 text-sm text-slate-700">
+
+                    <span
+
+                      className={`inline-flex size-4 items-center justify-center rounded-full border ${
+
+                        item.done ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300"
+
+                      }`}
+
+                    >
+
+                      {item.done ? "âœ“" : ""}
+
+                    </span>
+
+                    {item.label}
+
+                  </li>
+
+                ))}
+
+              </ul>
+
+            ) : (
+
+              <p className="text-sm text-slate-500">Sem checklist detalhado.</p>
+
+            )}
+
+          </div>
+
+
+
+          <div className="space-y-3">
+
+            <h3 className="text-sm font-semibold text-slate-900">Timeline</h3>
+
+            {state === "error" ? (
+
+              <p className="text-sm text-rose-600">{error}</p>
+
+            ) : timeline.length > 0 ? (
+
+              <ul className="space-y-3">
+
+                {timeline
+
+                  .slice(-5)
+
+                  .reverse()
+
+                  .map((entry) => (
+
+                    <li
+
+                      key={entry.id}
+
+                      className="rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600"
+
+                    >
+
+                      <p className="font-semibold text-slate-800">{entry.message}</p>
+
+                      <p>{new Date(entry.createdAt).toLocaleString("pt-BR")}</p>
+
+                    </li>
+
+                  ))}
+
+              </ul>
+
+            ) : (
+
+              <p className="text-sm text-slate-500">Nenhum evento registrado ainda.</p>
+
+            )}
+
+          </div>
+
+
+
+          <div className="space-y-3">
+
+            <h3 className="text-sm font-semibold text-slate-900">Adicionar atualizaÃ§Ã£o</h3>
+
+            <form onSubmit={onNoteSubmit} className="space-y-2">
+
+              <textarea
+
+                value={noteText}
+
+                onChange={(event) => onNoteChange(event.target.value)}
+
+                className="min-h-[100px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none focus:border-deepGreen"
+
+                placeholder="Conte rapidamente o que mudou ou qual o prÃ³ximo passo..."
+
+                disabled={noteState === "saving" || disableActions}
+
+              />
+
+              {noteFeedback ? <p className="text-xs text-rose-600">{noteFeedback}</p> : null}
+
+              <button
+
+                type="submit"
+
+                disabled={noteState === "saving" || disableActions}
+
+                className="rounded-full bg-deepGreen px-4 py-1.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+
+              >
+
+                {noteState === "saving" ? "Salvando..." : "Enviar atualizaÃ§Ã£o"}
+
+              </button>
+
+            </form>
+
+          </div>
+
+
+
+          <div className="flex flex-wrap gap-3">
+
+            <a
+
+              href="/calendar"
+
+              className="inline-flex items-center rounded-full border border-deepGreen/30 px-4 py-1.5 text-sm font-semibold text-deepGreen hover:border-deepGreen/60"
+
+            >
+
+              Registrar horas
+
+            </a>
+
+            <a
+
+              href="/projects"
+
+              className="inline-flex items-center rounded-full border border-terracota px-4 py-1.5 text-sm font-semibold text-terracota hover:bg-terracota/10"
+
+            >
+
+              Abrir projeto
+
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+  );
+
+}
+
+
+
+type CreateTaskModalProps = {
+
+  open: boolean;
+
+  form: CreateTaskForm;
+
+  projects: TaskOverviewProject[];
+
+  assignees: TaskOverviewAssignee[];
+
+  state: "idle" | "saving";
+
+  feedback: string | null;
+
+  onClose: () => void;
+
+  onChange: (field: keyof CreateTaskForm, value: string | string[]) => void;
+
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+
+};
+
+
+
+function CreateTaskModal({
+
+  open,
+
+  form,
+
+  projects,
+
+  assignees,
+
+  state,
+
+  feedback,
+
+  onClose,
+
+  onChange,
+
+  onSubmit
+
+}: CreateTaskModalProps): JSX.Element | null {
+
+  if (!open) {
+
+    return null;
+
+  }
+
+
+
+  const handleAssigneeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+
+    const values = Array.from(event.target.selectedOptions).map((option) => option.value);
+
+    onChange("assignees", values);
+
+  };
+
+
+
+  return (
+
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+
+      <div className="w-full max-w-2xl rounded-[32px] bg-white p-8 shadow-2xl">
+
+        <div className="flex items-start justify-between gap-3">
+
+          <div>
+
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Nova tarefa</p>
+
+            <h2 className="text-2xl font-semibold text-slate-900">Adicionar ao pipeline</h2>
+
+            <p className="text-sm text-slate-500">
+
+              Defina o projeto, responsÃ¡vel e prazo para jÃ¡ cair na lista principal.
+
+            </p>
+
+          </div>
+
+          <button
+
+            type="button"
+
+            onClick={onClose}
+
+            className="rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+
+          >
+
+            Fechar
+
+          </button>
+
+        </div>
+
+
+
+        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-slate-800">
+
+            Nome da tarefa *
+
+            <input
+
+              type="text"
+
+              value={form.title}
+
+              onChange={(event) => onChange("title", event.target.value)}
+
+              className="rounded-2xl border border-slate-300 px-4 py-2 text-slate-900 outline-none focus:border-deepGreen"
+
+              placeholder="Ex.: Revisar criativos de Natal"
+
+              required
+
+            />
+
+          </label>
+
+
+
+          <div className="grid gap-4 md:grid-cols-2">
+
+            <label className="flex flex-col gap-2 text-sm font-medium text-slate-800">
+
+              Projeto *
+
+              <select
+
+                value={form.projectId}
+
+                onChange={(event) => onChange("projectId", event.target.value)}
+
+                className="rounded-2xl border border-slate-300 px-4 py-2 text-slate-900 outline-none focus:border-deepGreen"
+
+                required
+
+              >
+
+                {projects.map((project) => (
+
+                  <option key={project.id} value={project.id}>
+
+                    {project.name}
+
+                  </option>
+
+                ))}
+
+              </select>
+
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm font-medium text-slate-800">
+
+              Prazo
+
+              <input
+
+                type="date"
+
+                value={form.dueDate}
+
+                onChange={(event) => onChange("dueDate", event.target.value)}
+
+                className="rounded-2xl border border-slate-300 px-4 py-2 text-slate-900 outline-none focus:border-deepGreen"
+
+              />
+
+            </label>
+
+          </div>
+
+
+
+          <div className="grid gap-4 md:grid-cols-2">
+
+            <label className="flex flex-col gap-2 text-sm font-medium text-slate-800">
+
+              ResponsÃ¡veis
+
+              <select
+
+                multiple
+
+                value={form.assignees}
+
+                onChange={handleAssigneeChange}
+
+                className="min-h-[120px] rounded-2xl border border-slate-300 px-4 py-2 text-slate-900 outline-none focus:border-deepGreen"
+
+              >
+
+                {assignees.map((member) => (
+
+                  <option key={member.id} value={member.id}>
+
+                    {member.name}
+
+                  </option>
+
+                ))}
+
+              </select>
+
+              <span className="text-xs font-normal text-slate-500">
+
+                Use Ctrl/Cmd + clique para selecionar mais de um.
+
+              </span>
+
+            </label>
+
+            <div className="grid gap-4">
+
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-800">
+
+                Tipo
+
+                <select
+
+                  value={form.type}
+
+                  onChange={(event) => onChange("type", event.target.value)}
+
+                  className="rounded-2xl border border-slate-300 px-4 py-2 text-slate-900 outline-none focus:border-deepGreen"
+
+                >
+
+                  <option value="optimization">OtimizaÃ§Ã£o</option>
+
+                  <option value="report">RelatÃ³rio</option>
+
+                  <option value="creative">Criativo</option>
+
+                  <option value="meeting">ReuniÃ£o</option>
+
+                  <option value="other">Outros</option>
+
+                </select>
+
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-800">
+
+                Status
+
+                <select
+
+                  value={form.status}
+
+                  onChange={(event) => onChange("status", event.target.value)}
+
+                  className="rounded-2xl border border-slate-300 px-4 py-2 text-slate-900 outline-none focus:border-deepGreen"
+
+                >
+
+                  {TASK_STATUS_ORDER.map((status) => (
+
+                    <option key={status} value={status}>
+
+                      {TASK_STATUS_LABELS[status]}
+
+                    </option>
+
+                  ))}
+
+                </select>
+
+              </label>
+
+            </div>
+
+          </div>
+
+
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-slate-800">
+
+            Notas/brief
+
+            <textarea
+
+              value={form.notes}
+
+              onChange={(event) => onChange("notes", event.target.value)}
+
+              className="min-h-[120px] rounded-2xl border border-slate-300 px-4 py-2 text-slate-900 outline-none focus:border-deepGreen"
+
+              placeholder="Contexto rÃ¡pido para o responsÃ¡vel..."
+
+            />
+
+          </label>
+
+
+
+          {feedback ? <p className="text-sm text-rose-600">{feedback}</p> : null}
+
+
+
+          <div className="flex flex-wrap gap-3">
+
+            <button
+
+              type="submit"
+
+              disabled={state === "saving"}
+
+              className="rounded-full bg-deepGreen px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+
+            >
+
+              {state === "saving" ? "Criando..." : "Criar tarefa"}
+
+            </button>
+
+            <button
+
+              type="button"
+
+              onClick={onClose}
+
+              className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+
+            >
+
+              Cancelar
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+
+function AssigneeStack({ assignees }: { assignees: TaskOverviewItem["assignees"] }): JSX.Element {
+
+  if (assignees.length === 0) {
+
+    return <p className="text-xs text-slate-500">Defina um responsÃ¡vel</p>;
+
+  }
+
+
+
+  return (
+
+    <div className="flex items-center -space-x-2">
+
+      {assignees.slice(0, 3).map((assignee, index) => (
+
+        <span
+
+          key={assignee.id}
+
+          className={`inline-flex size-9 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white ${
+
+            assignee.color ? "" : ASSIGNEE_COLORS[index % ASSIGNEE_COLORS.length]
+
+          }`}
+
+          style={assignee.color ? { backgroundColor: assignee.color } : undefined}
+
+          title={assignee.name}
+
+        >
+
+          {getInitials(assignee.name)}
+
+        </span>
+
+      ))}
+
+      {assignees.length > 3 ? (
+
+        <span className="inline-flex size-9 items-center justify-center rounded-full border-2 border-white bg-slate-200 text-xs font-semibold text-slate-700">
+
+          +{assignees.length - 3}
+
+        </span>
+
+      ) : null}
+
+    </div>
+
+  );
+
+}
+
+
+
+function getInitials(name: string): string {
+
+  return name
+
+    .split(" ")
+
+    .filter(Boolean)
+
+    .slice(0, 2)
+
+    .map((chunk) => chunk[0]?.toUpperCase() ?? "")
+
+    .join("");
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

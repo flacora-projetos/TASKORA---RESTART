@@ -1,0 +1,26 @@
+[
+  {
+    "displayName": "Flávio Corá",
+    "email": "flacora@gmail.com",
+    "orgId": "org-dev",
+    "roles": ["gestor", "analista", "suporte"]
+  },
+  {
+    "displayName": "Fernanda Corá",
+    "email": "contato@nandacora.com.br",
+    "orgId": "org-dev",
+    "roles": ["gestor", "analista", "suporte"]
+  },
+  {
+    "displayName": "Daniel dos Anjos",
+    "email": "danieldosanjosveleda.1999@gmail.com",
+    "orgId": "org-dev",
+    "roles": ["gestor", "analista", "suporte"]
+  },
+  {
+    "displayName": "Equipe Dácora",
+    "email": "equipe@nandacora.com.br",
+    "orgId": "org-dev",
+    "roles": ["gestor", "analista", "suporte"]
+  }
+]

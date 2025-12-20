@@ -1,0 +1,19 @@
+{
+  "orgCodes": {
+    "D": "Dacora",
+    "A": "Allgrotech",
+    "N": "Narah Lopes"
+  },
+  "members": [
+    {
+      "email": "flacora@gmail.com",
+      "orgs": ["D", "A", "N"],
+      "roles": ["admin"]
+    },
+    {
+      "email": "contato@nandacora.com.br",
+      "orgs": ["D", "A"],
+      "roles": ["member"]
+    }
+  ]
+}
