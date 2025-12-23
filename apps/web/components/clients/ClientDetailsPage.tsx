@@ -108,50 +108,6 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
     }
   }, [clientId]);
 
-  const loadInstagramStatus = useCallback(async () => {
-    setStatusError(null);
-    setIsLoadingStatus(true);
-    try {
-      const orgId = getActiveOrgId();
-      const baseUrl =
-        process.env.NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL ??
-        "https://instagram-integration-770338558500.us-central1.run.app";
-      const trimmedBase = baseUrl.replace(/\/$/, "");
-      const url = `${trimmedBase}/integrations/instagram/status?orgId=${encodeURIComponent(
-        orgId ?? ""
-      )}&clientId=${encodeURIComponent(clientId)}`;
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json"
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`Status error (${response.status})`);
-      }
-      const data = (await response.json()) as {
-        connected?: boolean;
-        expires_at?: string;
-        ig_user_id?: string;
-        scopes?: string[];
-        updated_at?: string;
-      };
-      setInstagramStatus({
-        connected: Boolean(data.connected),
-        igUserId: data.ig_user_id,
-        expiresAt: data.expires_at,
-        scopes: data.scopes,
-        updatedAt: data.updated_at
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Falha ao consultar status do Instagram.";
-      setStatusError(message);
-      setInstagramStatus(null);
-    } finally {
-      setIsLoadingStatus(false);
-    }
-  }, [clientId]);
-
   const loadClient = useCallback(
     async (currentToken: string) => {
       setState((prev) => ({ ...prev, status: "loading" }));
