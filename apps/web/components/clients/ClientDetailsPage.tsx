@@ -415,7 +415,7 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
     setIsStartingInstagram(true);
     try {
       const orgId = getActiveOrgId();
-      const state = `org=${orgId ?? "unknown"};client=${client.id};ts=${Date.now()}`;
+      const state = `org=${orgId ?? "none"};client=${client.id}`;
       const baseUrl =
         process.env.NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL ??
         "https://instagram-integration-770338558500.us-central1.run.app";
