@@ -8,7 +8,7 @@ type InstagramLoginModalProps = {
   errorMessage?: string | null;
 };
 
-const SCOPES = ["instagram_business_basic", "instagram_basic", "instagram_business_manage_insights"];
+const SCOPES = ["instagram_basic"];
 
 export function InstagramLoginModal({
   isOpen,

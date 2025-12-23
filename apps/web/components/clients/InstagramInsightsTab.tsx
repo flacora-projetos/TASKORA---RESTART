@@ -29,8 +29,8 @@ export function InstagramInsightsTab({
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-deepGreen/60">Instagram</p>
             <h3 className="text-lg font-semibold text-deepGreen">Instagram Insights (preview)</h3>
             <p className="text-sm text-deepGreen/70">
-              This tab will show profile and media insights fetched from the consolidated integrations project. For Meta
-              review, all labels and scopes remain in English.
+              This tab will show profile and basic connection details fetched from the consolidated integrations project.
+              For Meta review, only the scope instagram_basic is requested.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -43,7 +43,7 @@ export function InstagramInsightsTab({
             </button>
             <div className="flex items-center gap-2 text-xs text-deepGreen/70">
               <span className="rounded-full bg-white px-3 py-1 font-semibold text-deepGreen">
-                Scopes: instagram_business_basic, instagram_basic, instagram_business_manage_insights
+                Scope: instagram_basic
               </span>
             </div>
           </div>
@@ -104,11 +104,13 @@ export function InstagramInsightsTab({
       <section className="rounded-2xl border border-deepGreen/10 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <h4 className="text-base font-semibold text-deepGreen">Account overview</h4>
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Waiting API</span>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            Pending expanded scopes
+          </span>
         </div>
         <p className="mt-1 text-sm text-deepGreen/70">
-          We will display profile info (name, username, media count) and connection status once the Instagram endpoints
-          are live.
+          With instagram_basic we show connection and profile basics. Media insights will be added after Meta approves
+          the advanced scopes.
         </p>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {["Profile", "Followers", "Media count"].map((item) => (
@@ -124,11 +126,11 @@ export function InstagramInsightsTab({
       <section className="rounded-2xl border border-deepGreen/10 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <h4 className="text-base font-semibold text-deepGreen">Recent media (coming soon)</h4>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Placeholder</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Basic scope</span>
         </div>
         <p className="mt-1 text-sm text-deepGreen/70">
-          The first version will list media items with reach, impressions, likes, and comments when the backend agent
-          exposes the Instagram endpoints.
+          We will add reach/impressions/engagement after the advanced scopes are approved. For now, only login with
+          instagram_basic is active.
         </p>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {[1, 2, 3, 4].map((index) => (
