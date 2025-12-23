@@ -260,3 +260,7 @@ pnpm install
 - Antes de push, revise docs novos para não expor credenciais. Tokens reais devem ficar apenas no Secret Manager (Cloud Run via --set-secrets).
 
 
+## Instagram Insights (preview)
+- Nova aba "Instagram Insights" no Cliente 360 (labels em ingles para revisao da Meta).
+- Escopos mostrados no modal: instagram_business_basic e instagram_basic. Login permanece em modo preview ate receber App ID e redirect do backend.
+- A aba exibe placeholders ate os endpoints de Instagram ficarem disponiveis no projeto consolidado.

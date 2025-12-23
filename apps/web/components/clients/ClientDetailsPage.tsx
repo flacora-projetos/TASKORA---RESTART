@@ -11,6 +11,8 @@ import { ClientMetricsCard } from "./ClientMetricsCard";
 import { ClientProjectsCard } from "./ClientProjectsCard";
 import { ClientReportExporter } from "./ClientReportExporter";
 import { ClientTimelineCard } from "./ClientTimelineCard";
+import { InstagramInsightsTab } from "./InstagramInsightsTab";
+import { InstagramLoginModal } from "./InstagramLoginModal";
 import { apiFetch, ApiError } from "../../lib/api";
 import type { Client, ClientPlatform } from "../../types/clients";
 import type { TeamMember } from "../../types/team";
@@ -27,9 +29,10 @@ type ClientState =
   | { status: "error"; data: Client | null; message: string };
 
 const CLIENT_TABS = [
-  { id: "overview", label: "Visão geral" },
+  { id: "overview", label: "Visao geral" },
   { id: "projects", label: "Projetos & Tarefas" },
-  { id: "settings", label: "Configurações" }
+  { id: "instagram", label: "Instagram Insights" },
+  { id: "settings", label: "Configuracoes" }
 ] as const;
 
 type ClientTabId = (typeof CLIENT_TABS)[number]["id"];
@@ -44,6 +47,7 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
   const [isArchiving, setIsArchiving] = useState(false);
   const [activeTab, setActiveTab] = useState<ClientTabId>("overview");
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
 
   const isAuthenticated = authStatus === "authenticated" && Boolean(token);
   const isAdmin = user?.isAdmin === true;
@@ -388,10 +392,14 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
     </div>
   );
 
+  const instagramContent = <InstagramInsightsTab onOpenLogin={() => setIsInstagramModalOpen(true)} />;
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "projects":
         return projectsContent;
+      case "instagram":
+        return instagramContent;
       case "settings":
         return isAdmin ? settingsContent : overviewContent;
       default:
@@ -502,6 +510,8 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         error={formError}
         teamMembers={teamMembers}
       />
+      <InstagramLoginModal isOpen={isInstagramModalOpen} onClose={() => setIsInstagramModalOpen(false)} />
     </>
   );
 }
+
