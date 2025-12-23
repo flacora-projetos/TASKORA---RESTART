@@ -264,3 +264,6 @@ pnpm install
 - Nova aba "Instagram Insights" no Cliente 360 (labels em ingles para revisao da Meta).
 - Escopos mostrados no modal: instagram_business_basic e instagram_basic. Login permanece em modo preview ate receber App ID e redirect do backend.
 - A aba exibe placeholders ate os endpoints de Instagram ficarem disponiveis no projeto consolidado.
+- Redirect URI: https://instagram-integration-770338558500.us-central1.run.app/auth/instagram/callback (cadastrar na Meta).
+- Env sugerida para o front: NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL=https://instagram-integration-770338558500.us-central1.run.app e NEXT_PUBLIC_IG_APP_ID=1181517340574625 (App ID nao e segredo).
+

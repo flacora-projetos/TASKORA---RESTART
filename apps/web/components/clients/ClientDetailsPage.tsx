@@ -14,6 +14,7 @@ import { ClientTimelineCard } from "./ClientTimelineCard";
 import { InstagramInsightsTab } from "./InstagramInsightsTab";
 import { InstagramLoginModal } from "./InstagramLoginModal";
 import { apiFetch, ApiError } from "../../lib/api";
+import { getActiveOrgId } from "../../lib/org";
 import type { Client, ClientPlatform } from "../../types/clients";
 import type { TeamMember } from "../../types/team";
 import { useAuth } from "../auth/AuthProvider";
@@ -48,6 +49,8 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
   const [activeTab, setActiveTab] = useState<ClientTabId>("overview");
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
+  const [isStartingInstagram, setIsStartingInstagram] = useState(false);
+  const [instagramError, setInstagramError] = useState<string | null>(null);
 
   const isAuthenticated = authStatus === "authenticated" && Boolean(token);
   const isAdmin = user?.isAdmin === true;
@@ -407,6 +410,40 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
     }
   };
 
+  const handleStartInstagramAuth = async () => {
+    setInstagramError(null);
+    setIsStartingInstagram(true);
+    try {
+      const orgId = getActiveOrgId();
+      const state = `org=${orgId ?? "unknown"};client=${client.id};ts=${Date.now()}`;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL ??
+        "https://instagram-integration-770338558500.us-central1.run.app";
+      const trimmedBase = baseUrl.replace(/\/$/, "");
+      const response = await fetch(
+        `${trimmedBase}/auth/instagram/start?state=${encodeURIComponent(state)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Instagram auth start failed (${response.status})`);
+      }
+      const data = (await response.json()) as { auth_url?: string };
+      if (!data.auth_url) {
+        throw new Error("Instagram auth URL not returned");
+      }
+      window.location.href = data.auth_url;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha ao iniciar login do Instagram.";
+      setInstagramError(message);
+      setIsStartingInstagram(false);
+    }
+  };
+
   return (
     <>
       <section className="rounded-xl border border-gray-200 bg-gradient-to-br from-deepGreen to-deepGreen/80 p-8 text-white shadow-sm">
@@ -510,7 +547,13 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         error={formError}
         teamMembers={teamMembers}
       />
-      <InstagramLoginModal isOpen={isInstagramModalOpen} onClose={() => setIsInstagramModalOpen(false)} />
+      <InstagramLoginModal
+        isOpen={isInstagramModalOpen}
+        onClose={() => setIsInstagramModalOpen(false)}
+        onStart={() => void handleStartInstagramAuth()}
+        isLoading={isStartingInstagram}
+        errorMessage={instagramError}
+      />
     </>
   );
 }

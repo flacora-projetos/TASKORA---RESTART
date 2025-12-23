@@ -27,7 +27,7 @@ export function InstagramInsightsTab({ onOpenLogin }: InstagramInsightsTabProps)
             </button>
             <div className="flex items-center gap-2 text-xs text-deepGreen/70">
               <span className="rounded-full bg-white px-3 py-1 font-semibold text-deepGreen">
-                Scopes: instagram_business_basic, instagram_basic
+                Scopes: instagram_business_basic, instagram_basic, instagram_business_manage_insights
               </span>
             </div>
           </div>

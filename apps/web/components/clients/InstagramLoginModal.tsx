@@ -3,11 +3,20 @@
 type InstagramLoginModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  onStart: () => void;
+  isLoading?: boolean;
+  errorMessage?: string | null;
 };
 
-const SCOPES = ["instagram_business_basic", "instagram_basic"];
+const SCOPES = ["instagram_business_basic", "instagram_basic", "instagram_business_manage_insights"];
 
-export function InstagramLoginModal({ isOpen, onClose }: InstagramLoginModalProps): JSX.Element | null {
+export function InstagramLoginModal({
+  isOpen,
+  onClose,
+  onStart,
+  isLoading,
+  errorMessage
+}: InstagramLoginModalProps): JSX.Element | null {
   if (!isOpen) {
     return null;
   }
@@ -29,8 +38,8 @@ export function InstagramLoginModal({ isOpen, onClose }: InstagramLoginModalProp
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-deepGreen/50">Instagram</p>
             <h3 className="text-lg font-semibold text-deepGreen">Instagram Login (preview)</h3>
             <p className="text-sm text-deepGreen/70">
-              We request Meta scopes only for review. When the backend callback is ready, this button will redirect to
-              the official OAuth dialog.
+              We request Meta scopes for review. Clicking the button will redirect to the official Instagram Login
+              dialog using the configured redirect URI.
             </p>
           </div>
 
@@ -51,17 +60,22 @@ export function InstagramLoginModal({ isOpen, onClose }: InstagramLoginModalProp
             <li>We link the Instagram account to the current organization and cache insights for this client.</li>
           </ol>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800">
-            Waiting for backend details (App ID, redirect URL, token exchange). This preview keeps the button disabled.
-          </div>
+          {errorMessage ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{errorMessage}</div>
+          ) : (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800">
+              The backend will exchange the code for a long-lived token and bind it to the current organization.
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
-              disabled
-              className="rounded-full bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 shadow-sm"
+              onClick={onStart}
+              disabled={isLoading}
+              className="rounded-full bg-terracota px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-terracota/90 disabled:cursor-not-allowed disabled:bg-terracota/60"
             >
-              Start Instagram login (preview)
+              {isLoading ? "Starting..." : "Start Instagram login"}
             </button>
           </div>
         </div>
