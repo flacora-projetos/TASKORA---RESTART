@@ -416,27 +416,41 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
     try {
       const orgId = getActiveOrgId();
       const state = `org=${orgId ?? "none"};client=${client.id}`;
+      const appId = process.env.NEXT_PUBLIC_IG_APP_ID ?? "1181517340574625";
+      const redirectUri =
+        process.env.NEXT_PUBLIC_IG_REDIRECT_URI ??
+        "https://instagram-integration-770338558500.us-central1.run.app/auth/instagram/callback";
+      const scopes = "instagram_basic instagram_business_basic instagram_business_manage_insights";
+      const fallbackAuthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${encodeURIComponent(state)}`;
+
       const baseUrl =
         process.env.NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL ??
         "https://instagram-integration-770338558500.us-central1.run.app";
       const trimmedBase = baseUrl.replace(/\/$/, "");
-      const response = await fetch(
-        `${trimmedBase}/auth/instagram/start?state=${encodeURIComponent(state)}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json"
+
+      try {
+        const response = await fetch(
+          `${trimmedBase}/auth/instagram/start?state=${encodeURIComponent(state)}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json"
+            }
           }
+        );
+        if (!response.ok) {
+          throw new Error(`Instagram auth start failed (${response.status})`);
         }
-      );
-      if (!response.ok) {
-        throw new Error(`Instagram auth start failed (${response.status})`);
+        const data = (await response.json()) as { auth_url?: string };
+        if (!data.auth_url) {
+          throw new Error("Instagram auth URL not returned");
+        }
+        window.location.href = data.auth_url;
+      } catch {
+        window.location.href = fallbackAuthUrl;
       }
-      const data = (await response.json()) as { auth_url?: string };
-      if (!data.auth_url) {
-        throw new Error("Instagram auth URL not returned");
-      }
-      window.location.href = data.auth_url;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha ao iniciar login do Instagram.";
       setInstagramError(message);
