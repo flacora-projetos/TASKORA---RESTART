@@ -51,6 +51,15 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
   const [isStartingInstagram, setIsStartingInstagram] = useState(false);
   const [instagramError, setInstagramError] = useState<string | null>(null);
+  const [instagramStatus, setInstagramStatus] = useState<{
+    connected: boolean;
+    igUserId?: string;
+    expiresAt?: string;
+    scopes?: string[];
+    updatedAt?: string;
+  } | null>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const isAuthenticated = authStatus === "authenticated" && Boolean(token);
   const isAdmin = user?.isAdmin === true;
@@ -396,13 +405,69 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
   );
 
   const instagramContent = <InstagramInsightsTab onOpenLogin={() => setIsInstagramModalOpen(true)} />;
+  const loadInstagramStatus = useCallback(async () => {
+    setStatusError(null);
+    setIsLoadingStatus(true);
+    try {
+      const orgId = getActiveOrgId();
+      const baseUrl =
+        process.env.NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL ??
+        "https://instagram-integration-770338558500.us-central1.run.app";
+      const trimmedBase = baseUrl.replace(/\/$/, "");
+      const url = `${trimmedBase}/integrations/instagram/status?orgId=${encodeURIComponent(
+        orgId ?? ""
+      )}&clientId=${encodeURIComponent(client.id)}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Status error (${response.status})`);
+      }
+      const data = (await response.json()) as {
+        connected?: boolean;
+        expires_at?: string;
+        ig_user_id?: string;
+        scopes?: string[];
+        updated_at?: string;
+      };
+      setInstagramStatus({
+        connected: Boolean(data.connected),
+        igUserId: data.ig_user_id,
+        expiresAt: data.expires_at,
+        scopes: data.scopes,
+        updatedAt: data.updated_at
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha ao consultar status do Instagram.";
+      setStatusError(message);
+      setInstagramStatus(null);
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  }, [client.id]);
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "projects":
         return projectsContent;
       case "instagram":
-        return instagramContent;
+        return (
+          <InstagramInsightsTab
+            onOpenLogin={() => setIsInstagramModalOpen(true)}
+            status={
+              instagramStatus ?? {
+                connected: false,
+                scopes: ["instagram_basic"]
+              }
+            }
+            onRefreshStatus={() => void loadInstagramStatus()}
+            statusLoading={isLoadingStatus}
+            statusError={statusError}
+          />
+        );
       case "settings":
         return isAdmin ? settingsContent : overviewContent;
       default:
@@ -464,6 +529,7 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         }
       }
       setIsStartingInstagram(false);
+      void loadInstagramStatus();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha ao iniciar login do Instagram.";
       setInstagramError(message);

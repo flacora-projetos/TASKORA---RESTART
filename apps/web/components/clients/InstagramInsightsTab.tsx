@@ -2,9 +2,25 @@
 
 type InstagramInsightsTabProps = {
   onOpenLogin: () => void;
+  status?: {
+    connected: boolean;
+    igUserId?: string;
+    expiresAt?: string;
+    scopes?: string[];
+    updatedAt?: string;
+  };
+  onRefreshStatus?: () => void;
+  statusLoading?: boolean;
+  statusError?: string | null;
 };
 
-export function InstagramInsightsTab({ onOpenLogin }: InstagramInsightsTabProps): JSX.Element {
+export function InstagramInsightsTab({
+  onOpenLogin,
+  status,
+  onRefreshStatus,
+  statusLoading,
+  statusError
+}: InstagramInsightsTabProps): JSX.Element {
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-deepGreen/15 bg-offWhite/90 p-6">
@@ -32,6 +48,57 @@ export function InstagramInsightsTab({ onOpenLogin }: InstagramInsightsTabProps)
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-deepGreen/10 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h4 className="text-base font-semibold text-deepGreen">Connection status</h4>
+          <div className="flex items-center gap-2">
+            {onRefreshStatus ? (
+              <button
+                type="button"
+                onClick={onRefreshStatus}
+                disabled={statusLoading}
+                className="rounded-full border border-deepGreen/30 px-3 py-1 text-xs font-semibold text-deepGreen hover:border-deepGreen/60 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {statusLoading ? "Checking..." : "Refresh status"}
+              </button>
+            ) : null}
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                status?.connected
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                  : "bg-slate-100 text-slate-700 border border-slate-200"
+              }`}
+            >
+              {status?.connected ? "Connected" : "Not connected"}
+            </span>
+          </div>
+        </div>
+        {statusError ? (
+          <p className="mt-2 text-sm text-red-700">{statusError}</p>
+        ) : (
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-deepGreen/10 bg-offWhite/70 p-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-deepGreen/60">IG User ID</p>
+              <p className="mt-1 text-sm text-deepGreen">
+                {status?.igUserId || (status?.connected ? "Pending fetch" : "Not linked")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-deepGreen/10 bg-offWhite/70 p-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-deepGreen/60">Expires at</p>
+              <p className="mt-1 text-sm text-deepGreen">
+                {status?.expiresAt ? new Date(status.expiresAt).toLocaleString() : "Unknown"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-deepGreen/10 bg-offWhite/70 p-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-deepGreen/60">Scopes</p>
+              <p className="mt-1 text-sm text-deepGreen">
+                {status?.scopes?.length ? status.scopes.join(", ") : "instagram_basic"}
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-deepGreen/10 bg-white p-5 shadow-sm">
