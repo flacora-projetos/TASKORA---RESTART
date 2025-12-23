@@ -429,6 +429,12 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         process.env.NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL ??
         "https://instagram-integration-770338558500.us-central1.run.app";
       const trimmedBase = baseUrl.replace(/\/$/, "");
+      const openPopup = (url: string) => {
+        const popup = window.open(url, "_blank", "noopener,noreferrer");
+        if (!popup) {
+          throw new Error("Pop-up bloqueado. Permita pop-ups para continuar o login do Instagram.");
+        }
+      };
 
       try {
         const response = await fetch(
@@ -447,16 +453,17 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         if (!data.auth_url) {
           throw new Error("Instagram auth URL not returned");
         }
-        const popup = window.open(data.auth_url, "_blank", "noopener,noreferrer");
-        if (!popup) {
-          window.location.href = data.auth_url;
-        }
-      } catch {
-        const popup = window.open(fallbackAuthUrl, "_blank", "noopener,noreferrer");
-        if (!popup) {
-          window.location.href = fallbackAuthUrl;
+        openPopup(data.auth_url);
+      } catch (innerError) {
+        try {
+          openPopup(fallbackAuthUrl);
+        } catch (popupError) {
+          const message =
+            popupError instanceof Error ? popupError.message : innerError instanceof Error ? innerError.message : undefined;
+          throw new Error(message || "Falha ao abrir o login do Instagram.");
         }
       }
+      setIsStartingInstagram(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha ao iniciar login do Instagram.";
       setInstagramError(message);
