@@ -416,11 +416,11 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
     try {
       const orgId = getActiveOrgId();
       const state = `org=${orgId ?? "none"};client=${client.id}`;
-      const appId = process.env.NEXT_PUBLIC_IG_APP_ID ?? "1181517340574625";
+      const appId = process.env.NEXT_PUBLIC_IG_APP_ID ?? "1119348563747588";
       const redirectUri =
         process.env.NEXT_PUBLIC_IG_REDIRECT_URI ??
         "https://instagram-integration-770338558500.us-central1.run.app/auth/instagram/callback";
-      const scopes = "instagram_basic instagram_business_basic instagram_business_manage_insights";
+      const scopes = "instagram_basic";
       const fallbackAuthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(
         redirectUri
       )}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${encodeURIComponent(state)}`;
