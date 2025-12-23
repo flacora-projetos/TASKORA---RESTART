@@ -494,10 +494,21 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         "https://instagram-integration-770338558500.us-central1.run.app";
       const trimmedBase = baseUrl.replace(/\/$/, "");
       const openPopup = (url: string) => {
-        const popup = window.open(url, "_blank", "noopener,noreferrer");
+        const popup = window.open(
+          url,
+          "instagram_auth",
+          "noopener,noreferrer,width=520,height=720,top=120,left=160"
+        );
         if (!popup) {
           throw new Error("Pop-up bloqueado. Permita pop-ups para continuar o login do Instagram.");
         }
+        const interval = window.setInterval(() => {
+          if (popup.closed) {
+            window.clearInterval(interval);
+            void loadInstagramStatus();
+          }
+        }, 1000);
+        return popup;
       };
 
       try {
@@ -528,13 +539,18 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         }
       }
       setIsStartingInstagram(false);
-      void loadInstagramStatus();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha ao iniciar login do Instagram.";
       setInstagramError(message);
       setIsStartingInstagram(false);
     }
   };
+
+  useEffect(() => {
+    if (isAuthenticated && token && activeTab === "instagram") {
+      void loadInstagramStatus();
+    }
+  }, [isAuthenticated, token, activeTab, loadInstagramStatus]);
 
   return (
     <>
