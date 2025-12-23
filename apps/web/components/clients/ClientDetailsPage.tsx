@@ -447,9 +447,15 @@ export function ClientDetailsPage({ clientId }: Props): JSX.Element {
         if (!data.auth_url) {
           throw new Error("Instagram auth URL not returned");
         }
-        window.location.href = data.auth_url;
+        const popup = window.open(data.auth_url, "_blank", "noopener,noreferrer");
+        if (!popup) {
+          window.location.href = data.auth_url;
+        }
       } catch {
-        window.location.href = fallbackAuthUrl;
+        const popup = window.open(fallbackAuthUrl, "_blank", "noopener,noreferrer");
+        if (!popup) {
+          window.location.href = fallbackAuthUrl;
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha ao iniciar login do Instagram.";
