@@ -267,3 +267,9 @@ pnpm install
 - Redirect URI: https://instagram-integration-770338558500.us-central1.run.app/auth/instagram/callback (cadastrar na Meta).
 - Env sugerida para o front: NEXT_PUBLIC_INSTAGRAM_AUTH_BASE_URL=https://instagram-integration-770338558500.us-central1.run.app e NEXT_PUBLIC_IG_APP_ID=1181517340574625 (App ID nao e segredo).
 
+
+## Instagram (login básico para revisão)
+- App ID (Facebook): 1119348563747588; redirect: https://instagram-integration-770338558500.us-central1.run.app/auth/instagram/callback.
+- Escopo ativo: instagram_basic (temporário para aprovação). Scopes avançados ficam pendentes até aprovação da Meta.
+- Front: login abre em pop-up (permita pop-ups); após o callback use “Refresh status” na aba Instagram Insights para ver connected/ig_user_id/expires_at.
+- API de status (hub): GET /integrations/instagram/status?orgId=<orgId>&clientId=<clientId> (Bearer INSTAGRAM_API_TOKEN) — front usa endpoint público do hub, sem bearer.
